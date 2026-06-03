@@ -19,8 +19,9 @@ const platforms = [
 
 export function PlatformTabs({ selectedPlatform, onSelectPlatform }: PlatformTabsProps) {
   return (
-    <div className="border-b border-border overflow-x-auto scrollbar-none">
-      <div className="flex">
+    <div className="border-b border-border">
+      {/* 平台多时自动换行,保证所有平台都可见(无需横向滑动) */}
+      <div className="flex flex-wrap">
         {platforms.map((platform) => {
           const Icon = platform.icon;
           const isActive = selectedPlatform === platform.id;
@@ -29,7 +30,7 @@ export function PlatformTabs({ selectedPlatform, onSelectPlatform }: PlatformTab
             <button
               key={platform.id}
               onClick={() => onSelectPlatform(platform.id)}
-              className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap transition-all border-b-2 ${
+              className={`flex items-center gap-2 px-4 sm:px-5 py-3 sm:py-4 text-sm font-medium whitespace-nowrap transition-all border-b-2 ${
                 isActive
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'
