@@ -260,7 +260,7 @@ children.push(makeTable(
 children.push(spacer());
 children.push(h2('6.2 广告情报 & 扩展（B/C 档）'));
 children.push(bullet('Meta 广告资料库（广告情报页数据源，需访问令牌）。'));
-children.push(bullet('TikTok（前端已就绪）：官方无公开热点 API，真实公开热点数据须走第三方数据商（如 Tikapi 等）。'));
+children.push(bullet('TikTok（前端已就绪）：推荐用官方 TikTok Creative Center（ads.tiktok.com/creative/creativeCenter → Trends），免费免登录，提供热门话题/音乐/视频/Top Ads。后端可复刻匿名令牌握手调用其 creative_radar_api 接口，或用无头浏览器渲染抓取；遵守 ToS 与频率限制。第三方数据商为备选。'));
 children.push(bullet('Facebook（前端已就绪）：自然内容无官方热榜 API，FB 侧公开数据以广告资料库为主。'));
 children.push(bullet('Tenor、Imgflip（梗图，免费/免 key）。'));
 children.push(bullet('X/Twitter（API v2，按量付费，慎用）、Pinterest。'));

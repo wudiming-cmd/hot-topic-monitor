@@ -164,7 +164,8 @@ const RAW_BY_SOURCE: Record<Platform, RawTrend[]> = {
       published_at: '7h ago', status: 'new',
     },
   ],
-  // 注:TikTok 官方无公开热点 API,以下为示意数据;真实接入需走第三方数据商
+  // 真实数据源:TikTok Creative Center(ads.tiktok.com/creative/creativeCenter,Trends 板块)
+  // 官方免费,提供热门话题标签/音乐/视频/Top Ads;后端经其 creative_radar_api 接口(需匿名令牌握手)或无头渲染获取。以下为示意数据。
   tiktok: [
     {
       source: 'tiktok', category: 'social',
