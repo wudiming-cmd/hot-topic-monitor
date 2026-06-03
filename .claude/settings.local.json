@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "mcp__Claude_Preview__preview_start",
-      "PowerShell($paths = @\\(\"C:\\\\Program Files\\\\LibreOffice\\\\program\\\\soffice.exe\",\"C:\\\\Program Files \\(x86\\)\\\\LibreOffice\\\\program\\\\soffice.exe\"\\); $found = $paths | Where-Object { Test-Path $_ }; if \\($found\\) { \"LO: $found\" } else { \"no-libreoffice\" }; $w = New-Object -ComObject Word.Application -ErrorAction SilentlyContinue; if \\($w\\) { \"WORD-COM-OK\"; $w.Quit\\(\\) } else { \"no-word\" })",
-      "PowerShell(Remove-Item \"C:\\\\Users\\\\Administrator\\\\Desktop\\\\平台搭建\\\\docs\\\\平台需求文档.pdf\" -Force -ErrorAction SilentlyContinue; Get-ChildItem \"C:\\\\Users\\\\Administrator\\\\Desktop\\\\平台搭建\\\\docs\" | Select-Object Name, @{n='KB';e={[math]::Round\\($_.Length/1KB,1\\)}})"
-    ]
-  }
-}

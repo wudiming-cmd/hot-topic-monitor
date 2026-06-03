@@ -1,4 +1,4 @@
-import { Search, RefreshCw, Download, ArrowDownWideNarrow } from 'lucide-react';
+import { Search, RefreshCw, Download, ArrowDownWideNarrow, Clock } from 'lucide-react';
 import { useState } from 'react';
 import type { SortKey } from '../services/types';
 
@@ -12,7 +12,16 @@ interface ToolbarProps {
   onExportCSV: () => void;
   loading: boolean;
   resultCount: number;
+  autoRefresh: number; // 秒,0=关闭
+  onAutoRefreshChange: (seconds: number) => void;
 }
+
+const AUTO_REFRESH_OPTIONS: { value: number; label: string }[] = [
+  { value: 0, label: '手动' },
+  { value: 30, label: '30秒' },
+  { value: 60, label: '1分钟' },
+  { value: 300, label: '5分钟' },
+];
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'composite_score', label: '综合分' },
@@ -32,6 +41,8 @@ export function Toolbar({
   onExportCSV,
   loading,
   resultCount,
+  autoRefresh,
+  onAutoRefreshChange,
 }: ToolbarProps) {
   const [exportOpen, setExportOpen] = useState(false);
 
@@ -75,6 +86,22 @@ export function Toolbar({
         <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         刷新
       </button>
+
+      {/* 自动刷新间隔 */}
+      <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2" title="自动刷新间隔">
+        <Clock className={`w-4 h-4 ${autoRefresh > 0 ? 'text-primary' : 'text-muted-foreground'}`} />
+        <select
+          value={autoRefresh}
+          onChange={(e) => onAutoRefreshChange(Number(e.target.value))}
+          className="bg-transparent text-sm text-foreground focus:outline-none cursor-pointer"
+        >
+          {AUTO_REFRESH_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value} className="bg-card text-foreground">
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* 导出 */}
       <div className="relative">

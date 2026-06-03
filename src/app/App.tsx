@@ -1,15 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
-import { TrendingUp, Flame, Zap, TrendingDown, Activity, BarChart3, Radar, AlertCircle } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  TrendingUp, Flame, Zap, TrendingDown, Activity, BarChart3, Radar,
+  AlertCircle, Megaphone, Sun, Moon, Star,
+} from 'lucide-react';
 import { MetricCard } from './components/MetricCard';
 import { TrendList } from './components/TrendList';
 import { PlatformTabs } from './components/PlatformTabs';
 import { MonthlyDashboard } from './components/MonthlyDashboard';
 import { Toolbar } from './components/Toolbar';
+import { TrendDetail } from './components/TrendDetail';
+import { FavoritesPanel } from './components/FavoritesPanel';
+import { SourceStatusBar } from './components/SourceStatusBar';
+import { AdIntelligence } from './components/AdIntelligence';
 import { useTrends } from './hooks/useTrends';
+import { useTheme } from './hooks/useTheme';
+import { useFavorites } from './hooks/useFavorites';
 import { exportTrendsCSV, exportTrendsJSON } from './services/export';
-import type { Category, Platform, SortKey, TrendStatus } from './services/types';
+import type { Category, Platform, SortKey, TrendItem, TrendStatus } from './services/types';
 
-type ViewMode = 'realtime' | 'monthly';
+type ViewMode = 'realtime' | 'monthly' | 'ads';
 
 export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('realtime');
@@ -17,24 +26,41 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('composite_score');
-  // 点击指标卡按状态筛选('all' 表示不筛选)
   const [selectedStatus, setSelectedStatus] = useState<TrendStatus | 'all'>('all');
   const [now, setNow] = useState(() => new Date());
+  const [autoRefresh, setAutoRefresh] = useState(0); // 秒,0=关
+  const [detail, setDetail] = useState<TrendItem | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [favOpen, setFavOpen] = useState(false);
 
-  // 让顶部时间真正跳动(每秒刷新)
+  const { theme, toggle: toggleTheme } = useTheme();
+  const {
+    favorites, isFavorite, toggle: toggleFavorite,
+    remove: removeFavorite, setNote: setFavoriteNote, clear: clearFavorites,
+  } = useFavorites();
+
+  // 顶部时间每秒跳动
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  const { items, loading, error, fetchedAt, dataSource, refresh } = useTrends({
+  const { items, statuses, loading, error, fetchedAt, dataSource, refresh } = useTrends({
     platform: selectedPlatform,
     category: selectedCategory,
     search,
     sortBy,
   });
 
-  // 指标由真实数据计算,并给出各状态占比作为「趋势」标注
+  // 自动刷新轮询(仅实时页)
+  const refreshRef = useRef(refresh);
+  refreshRef.current = refresh;
+  useEffect(() => {
+    if (autoRefresh <= 0 || viewMode !== 'realtime') return;
+    const id = setInterval(() => refreshRef.current(), autoRefresh * 1000);
+    return () => clearInterval(id);
+  }, [autoRefresh, viewMode]);
+
   const stats = useMemo(() => {
     const total = items.length;
     const rising = items.filter((t) => t.status === 'rising').length;
@@ -44,57 +70,80 @@ export default function App() {
     return { total, rising, fresh, declining, pct };
   }, [items]);
 
-  // 指标卡筛选后的实际展示列表(导出/计数都基于它)
   const displayedItems = useMemo(
     () =>
-      selectedStatus === 'all'
-        ? items
-        : items.filter((t) => t.status === selectedStatus),
+      selectedStatus === 'all' ? items : items.filter((t) => t.status === selectedStatus),
     [items, selectedStatus],
   );
 
-  // 点击指标卡:再次点击同一状态则取消筛选
   const toggleStatus = (status: TrendStatus) =>
     setSelectedStatus((cur) => (cur === status ? 'all' : status));
 
+  const openDetail = (t: TrendItem) => {
+    setDetail(t);
+    setDetailOpen(true);
+  };
+
+  const navItems: { id: ViewMode; label: string; icon: typeof Radar }[] = [
+    { id: 'realtime', label: '实时监控', icon: Radar },
+    { id: 'monthly', label: '月度汇总', icon: BarChart3 },
+    { id: 'ads', label: '广告情报', icon: Megaphone },
+  ];
+
   return (
-    <div className="min-h-screen bg-background dark">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-4 sm:px-6 py-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground">热点监测平台</h1>
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">热点监测平台</h1>
               <p className="text-sm text-muted-foreground mt-1">多平台趋势分析与追踪</p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               {/* View Mode Toggle */}
               <div className="flex gap-1 bg-muted/30 p-1 rounded-lg">
-                <button
-                  onClick={() => setViewMode('realtime')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    viewMode === 'realtime'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Radar className="w-4 h-4" />
-                  实时监控
-                </button>
-                <button
-                  onClick={() => setViewMode('monthly')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    viewMode === 'monthly'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  月度汇总
-                </button>
+                {navItems.map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => setViewMode(id)}
+                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                      viewMode === id
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{label}</span>
+                  </button>
+                ))}
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* 选题清单 */}
+              <button
+                onClick={() => setFavOpen(true)}
+                className="relative flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground hover:border-primary/50 transition-all"
+                title="选题清单"
+              >
+                <Star className="w-4 h-4" />
+                <span className="hidden sm:inline">选题</span>
+                {favorites.length > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-amber-400 text-[10px] font-bold text-black flex items-center justify-center">
+                    {favorites.length}
+                  </span>
+                )}
+              </button>
+
+              {/* 主题切换 */}
+              <button
+                onClick={toggleTheme}
+                className="flex items-center justify-center w-9 h-9 bg-card border border-border rounded-lg text-foreground hover:border-primary/50 transition-all"
+                title={theme === 'dark' ? '切换到亮色' : '切换到暗色'}
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+
+              <div className="hidden md:flex items-center gap-2">
                 <Activity className={`w-5 h-5 text-primary ${loading ? 'animate-pulse' : ''}`} />
                 <span className="text-sm text-muted-foreground font-mono">
                   {dataSource === 'mock' ? '模拟数据' : dataSource === 'live' ? '实时数据' : '加载中'} ·{' '}
@@ -106,69 +155,50 @@ export default function App() {
         </div>
       </header>
 
-      <div className="container mx-auto px-6 py-8">
-        {viewMode === 'realtime' ? (
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {viewMode === 'realtime' && (
           <>
-            {/* 错误提示(单源/整体失败) */}
             {error && (
               <div className="mb-6 flex items-center gap-2 px-4 py-3 bg-destructive/10 border border-destructive/30 rounded-lg text-sm text-destructive">
                 <AlertCircle className="w-4 h-4" />
-                数据加载失败:{error}
+                数据加载失败：{error}
               </div>
             )}
 
+            {/* 数据源采集状态 */}
+            <SourceStatusBar statuses={statuses} />
+
             {/* Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
               <MetricCard
-                label="当前热点数"
-                value={stats.total}
-                icon={<Flame className="w-5 h-5" />}
-                onClick={() => setSelectedStatus('all')}
-                active={selectedStatus === 'all'}
+                label="当前热点数" value={stats.total} icon={<Flame className="w-5 h-5" />}
+                onClick={() => setSelectedStatus('all')} active={selectedStatus === 'all'}
               />
               <MetricCard
-                label="快速上升"
-                value={stats.rising}
-                icon={<TrendingUp className="w-5 h-5" />}
-                trend={`占 ${stats.pct(stats.rising)}`}
-                trendUp={true}
-                color="emerald"
-                onClick={() => toggleStatus('rising')}
-                active={selectedStatus === 'rising'}
+                label="快速上升" value={stats.rising} icon={<TrendingUp className="w-5 h-5" />}
+                trend={`占 ${stats.pct(stats.rising)}`} trendUp color="emerald"
+                onClick={() => toggleStatus('rising')} active={selectedStatus === 'rising'}
               />
               <MetricCard
-                label="新冒出"
-                value={stats.fresh}
-                icon={<Zap className="w-5 h-5" />}
-                trend={`占 ${stats.pct(stats.fresh)}`}
-                trendUp={true}
-                color="amber"
-                onClick={() => toggleStatus('new')}
-                active={selectedStatus === 'new'}
+                label="新冒出" value={stats.fresh} icon={<Zap className="w-5 h-5" />}
+                trend={`占 ${stats.pct(stats.fresh)}`} trendUp color="amber"
+                onClick={() => toggleStatus('new')} active={selectedStatus === 'new'}
               />
               <MetricCard
-                label="已回落"
-                value={stats.declining}
-                icon={<TrendingDown className="w-5 h-5" />}
-                trend={`占 ${stats.pct(stats.declining)}`}
-                trendUp={false}
-                color="slate"
-                onClick={() => toggleStatus('declining')}
-                active={selectedStatus === 'declining'}
+                label="已回落" value={stats.declining} icon={<TrendingDown className="w-5 h-5" />}
+                trend={`占 ${stats.pct(stats.declining)}`} trendUp={false} color="slate"
+                onClick={() => toggleStatus('declining')} active={selectedStatus === 'declining'}
               />
             </div>
 
-            {/* 工具栏:搜索 / 排序 / 刷新 / 导出 */}
             <Toolbar
-              search={search}
-              onSearchChange={setSearch}
-              sortBy={sortBy}
-              onSortChange={setSortBy}
+              search={search} onSearchChange={setSearch}
+              sortBy={sortBy} onSortChange={setSortBy}
               onRefresh={refresh}
               onExportJSON={() => exportTrendsJSON(displayedItems)}
               onExportCSV={() => exportTrendsCSV(displayedItems)}
-              loading={loading}
-              resultCount={displayedItems.length}
+              loading={loading} resultCount={displayedItems.length}
+              autoRefresh={autoRefresh} onAutoRefreshChange={setAutoRefresh}
             />
 
             {/* Category Filter */}
@@ -178,7 +208,7 @@ export default function App() {
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                       selectedCategory === category
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/50'
@@ -194,7 +224,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Platform Tabs & Trend List */}
             <div className="bg-card border border-border rounded-xl overflow-hidden">
               <PlatformTabs
                 selectedPlatform={selectedPlatform}
@@ -203,21 +232,46 @@ export default function App() {
               {loading ? (
                 <TrendListSkeleton />
               ) : (
-                <TrendList trends={displayedItems} />
+                <TrendList
+                  trends={displayedItems}
+                  onSelect={openDetail}
+                  isFavorite={isFavorite}
+                  onToggleFavorite={toggleFavorite}
+                />
               )}
             </div>
 
-            {/* 采集时间 */}
             {fetchedAt && !loading && (
               <p className="text-xs text-muted-foreground font-mono mt-3 text-right">
-                上次采集:{new Date(fetchedAt).toLocaleString('zh-CN')}
+                上次采集：{new Date(fetchedAt).toLocaleString('zh-CN')}
+                {autoRefresh > 0 && ` · 每 ${autoRefresh < 60 ? `${autoRefresh}秒` : `${autoRefresh / 60}分钟`}自动刷新`}
               </p>
             )}
           </>
-        ) : (
-          <MonthlyDashboard />
         )}
+
+        {viewMode === 'monthly' && <MonthlyDashboard />}
+        {viewMode === 'ads' && <AdIntelligence />}
       </div>
+
+      {/* 详情抽屉 */}
+      <TrendDetail
+        trend={detail}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        isFavorite={detail ? isFavorite(detail) : false}
+        onToggleFavorite={toggleFavorite}
+      />
+
+      {/* 选题清单抽屉 */}
+      <FavoritesPanel
+        open={favOpen}
+        onOpenChange={setFavOpen}
+        favorites={favorites}
+        onRemove={removeFavorite}
+        onSetNote={setFavoriteNote}
+        onClear={clearFavorites}
+      />
     </div>
   );
 }

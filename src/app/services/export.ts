@@ -44,6 +44,30 @@ function escapeCsv(value: unknown): string {
   return str;
 }
 
+// 选题清单导出(含备注)
+export function exportFavoritesJSON(
+  favorites: { item: TrendItem; note: string; saved_at: string }[],
+) {
+  triggerDownload(
+    JSON.stringify(favorites, null, 2),
+    `favorites-${timestamp()}.json`,
+    'application/json',
+  );
+}
+
+export function exportFavoritesCSV(
+  favorites: { item: TrendItem; note: string; saved_at: string }[],
+) {
+  const header = ['title', 'source', 'category', 'composite_score', 'url', 'note', 'saved_at'].join(',');
+  const rows = favorites.map((f) =>
+    [f.item.title, f.item.source, f.item.category, f.item.composite_score, f.item.url, f.note, f.saved_at]
+      .map(escapeCsv)
+      .join(','),
+  );
+  const content = '﻿' + [header, ...rows].join('\n');
+  triggerDownload(content, `favorites-${timestamp()}.csv`, 'text/csv');
+}
+
 export function exportTrendsCSV(items: TrendItem[]) {
   const header = CSV_COLUMNS.join(',');
   const rows = items.map((item) =>

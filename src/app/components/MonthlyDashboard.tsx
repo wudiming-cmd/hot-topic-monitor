@@ -16,9 +16,11 @@ import {
 import { useRef, useState } from 'react';
 import { Calendar, TrendingUp, Award, Target, AlertCircle } from 'lucide-react';
 import { useMonthlyStats } from '../hooks/useMonthlyStats';
+import { AVAILABLE_MONTHS } from '../services/mockBackend';
 
 export function MonthlyDashboard() {
-  const { data: monthlyStats, loading, error } = useMonthlyStats();
+  const [month, setMonth] = useState<string>(AVAILABLE_MONTHS[0]);
+  const { data: monthlyStats, loading, error } = useMonthlyStats(month);
   // 点击 KPI 卡时,平滑滚动到对应图表并短暂高亮
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -30,7 +32,7 @@ export function MonthlyDashboard() {
     timer.current = setTimeout(() => setHighlighted(null), 1600);
   };
 
-  if (loading) {
+  if (loading && !monthlyStats) {
     return (
       <div className="flex items-center justify-center py-24 text-muted-foreground">
         <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mr-3" />
@@ -49,7 +51,7 @@ export function MonthlyDashboard() {
   }
 
   const { summary } = monthlyStats;
-  const [year, month] = monthlyStats.month.split('-');
+  const [year, monthNum] = monthlyStats.month.split('-');
 
   return (
     <div className="space-y-6">
@@ -57,11 +59,20 @@ export function MonthlyDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-foreground">月度汇总</h2>
-          <p className="text-sm text-muted-foreground mt-1">{year}年{month}月 数据分析报告</p>
+          <p className="text-sm text-muted-foreground mt-1">{year}年{monthNum}月 数据分析报告</p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg">
           <Calendar className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-foreground">{monthlyStats.month}</span>
+          <select
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+            className="bg-transparent text-sm font-medium text-foreground focus:outline-none cursor-pointer"
+          >
+            {AVAILABLE_MONTHS.map((m) => (
+              <option key={m} value={m} className="bg-card text-foreground">{m}</option>
+            ))}
+          </select>
+          {loading && <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
         </div>
       </div>
 

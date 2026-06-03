@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { getMonthlyStats } from '../services/client';
 import type { MonthlyStats } from '../services/types';
 
-export function useMonthlyStats() {
+export function useMonthlyStats(month?: string) {
   const [data, setData] = useState<MonthlyStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -12,7 +12,7 @@ export function useMonthlyStats() {
     setLoading(true);
     setError(null);
 
-    getMonthlyStats()
+    getMonthlyStats(month)
       .then((res) => {
         if (!cancelled) setData(res);
       })
@@ -26,7 +26,7 @@ export function useMonthlyStats() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [month]);
 
   return { data, loading, error };
 }

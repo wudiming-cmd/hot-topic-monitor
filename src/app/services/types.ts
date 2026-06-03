@@ -66,6 +66,37 @@ export interface SourceStatus {
   error?: string;
 }
 
+// ===== 广告情报(Meta 广告资料库) =====
+export type AdPlatform = 'facebook' | 'instagram' | 'messenger' | 'audience_network';
+
+export interface AdItem {
+  id: string;
+  advertiser: string; // 投放主体/主页名
+  category: Category | 'commerce' | 'other';
+  platforms: AdPlatform[]; // 在哪些版位投放
+  headline: string;
+  body: string;
+  cta: string; // 行动号召,如 "Shop Now"
+  media_url?: string | null; // 合规预览图
+  link?: string; // 落地页/广告库链接
+  status: 'active' | 'inactive';
+  started_at: string; // 开始投放时间(相对或 ISO)
+  regions: string[]; // 投放地区,如 ["US","JP"]
+  reach?: string; // 触达量级(区间字符串)
+}
+
+export interface AdQuery {
+  search?: string;
+  category?: Category | 'commerce' | 'other' | 'all';
+  region?: string | 'all';
+}
+
+export interface AdsResponse {
+  ads: AdItem[];
+  fetched_at: string;
+  source: 'mock' | 'live';
+}
+
 // 月度汇总数据结构
 export interface MonthlyStats {
   month: string; // 如 "2026-06"

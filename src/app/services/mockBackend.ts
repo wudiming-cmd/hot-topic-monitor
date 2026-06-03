@@ -254,7 +254,44 @@ export const mockMonthlyStats: MonthlyStats = {
   },
 };
 
-export async function fetchMockMonthlyStats(): Promise<MonthlyStats> {
+// 由基准月(2026-06)派生其它月份,用确定性缩放因子做差异(不依赖随机数)。
+function deriveMonth(month: string, label: string, scale: number): MonthlyStats {
+  const s = (n: number) => Math.round(n * scale);
+  const pct = (base: number) => `${base > 0 ? '+' : ''}${(base * scale).toFixed(1)}%`;
+  return {
+    ...mockMonthlyStats,
+    month,
+    dailyTrends: mockMonthlyStats.dailyTrends.map((d) => ({
+      date: d.date.replace(/^\d+\//, `${label}/`),
+      total: s(d.total),
+      rising: s(d.rising),
+      new: s(d.new),
+    })),
+    categoryPerformance: mockMonthlyStats.categoryPerformance.map((c) => ({
+      ...c,
+      count: s(c.count),
+    })),
+    summary: {
+      ...mockMonthlyStats.summary,
+      totalTrends: s(mockMonthlyStats.summary.totalTrends),
+      avgDailyActive: s(mockMonthlyStats.summary.avgDailyActive),
+      newMemes: s(mockMonthlyStats.summary.newMemes),
+      totalTrendsChange: pct(18),
+      avgDailyActiveChange: pct(9),
+      newMemesChange: pct(30),
+    },
+  };
+}
+
+const MONTHLY_BY_MONTH: Record<string, MonthlyStats> = {
+  '2026-06': mockMonthlyStats,
+  '2026-05': deriveMonth('2026-05', '5', 0.86),
+  '2026-04': deriveMonth('2026-04', '4', 0.72),
+};
+
+export const AVAILABLE_MONTHS = Object.keys(MONTHLY_BY_MONTH).sort().reverse();
+
+export async function fetchMockMonthlyStats(month?: string): Promise<MonthlyStats> {
   await delay();
-  return mockMonthlyStats;
+  return MONTHLY_BY_MONTH[month ?? ''] ?? mockMonthlyStats;
 }

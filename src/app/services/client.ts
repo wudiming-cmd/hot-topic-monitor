@@ -68,11 +68,12 @@ export async function getTrends(query: TrendQuery = {}): Promise<
   return { items, fetched_at, source, statuses };
 }
 
-export async function getMonthlyStats(): Promise<MonthlyStats> {
+export async function getMonthlyStats(month?: string): Promise<MonthlyStats> {
   if (API_BASE_URL) {
-    const res = await fetch(`${API_BASE_URL}/monthly`);
+    const qs = month ? `?month=${encodeURIComponent(month)}` : '';
+    const res = await fetch(`${API_BASE_URL}/monthly${qs}`);
     if (!res.ok) throw new Error(`后端返回 ${res.status}`);
     return res.json();
   }
-  return fetchMockMonthlyStats();
+  return fetchMockMonthlyStats(month);
 }

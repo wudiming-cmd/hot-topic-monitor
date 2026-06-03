@@ -30,3 +30,6 @@ Thumbs.db
 docs/*.pdf
 # Office 打开文档时的临时锁文件
 ~$*
+
+# 本地机器专属设置
+.claude/settings.local.json

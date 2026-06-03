@@ -1,12 +1,15 @@
-import { ArrowUp, ArrowDown, Minus, Sparkles, ExternalLink, Inbox } from 'lucide-react';
+import { ArrowUp, ArrowDown, Minus, Sparkles, ExternalLink, Inbox, Star } from 'lucide-react';
 import type { TrendItem } from '../services/types';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface TrendListProps {
   trends: TrendItem[];
+  onSelect?: (trend: TrendItem) => void;
+  isFavorite?: (trend: TrendItem) => boolean;
+  onToggleFavorite?: (trend: TrendItem) => void;
 }
 
-export function TrendList({ trends }: TrendListProps) {
+export function TrendList({ trends, onSelect, isFavorite, onToggleFavorite }: TrendListProps) {
   // 列表已由服务层排序;这里仅按当前顺序展示并标注名次。
   if (trends.length === 0) {
     return (
@@ -20,13 +23,32 @@ export function TrendList({ trends }: TrendListProps) {
   return (
     <div className="divide-y divide-border">
       {trends.map((trend, index) => (
-        <TrendRow key={`${trend.source}-${trend.url}-${index}`} trend={trend} rank={index + 1} />
+        <TrendRow
+          key={`${trend.source}-${trend.url}-${index}`}
+          trend={trend}
+          rank={index + 1}
+          onSelect={onSelect}
+          favorite={isFavorite?.(trend) ?? false}
+          onToggleFavorite={onToggleFavorite}
+        />
       ))}
     </div>
   );
 }
 
-function TrendRow({ trend, rank }: { trend: TrendItem; rank: number }) {
+function TrendRow({
+  trend,
+  rank,
+  onSelect,
+  favorite,
+  onToggleFavorite,
+}: {
+  trend: TrendItem;
+  rank: number;
+  onSelect?: (t: TrendItem) => void;
+  favorite?: boolean;
+  onToggleFavorite?: (t: TrendItem) => void;
+}) {
   const statusConfig = {
     new: { icon: Sparkles, color: 'text-amber-400 bg-amber-500/10', label: '新' },
     rising: { icon: ArrowUp, color: 'text-emerald-400 bg-emerald-500/10', label: '升' },
@@ -84,9 +106,25 @@ function TrendRow({ trend, rank }: { trend: TrendItem; rank: number }) {
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-3 mb-2">
-            <h3 className="text-base font-medium text-foreground group-hover:text-primary transition-colors flex-1">
+            <button
+              type="button"
+              onClick={() => onSelect?.(trend)}
+              className="text-left text-base font-medium text-foreground group-hover:text-primary transition-colors flex-1 cursor-pointer"
+            >
               {trend.title}
-            </h3>
+            </button>
+            {onToggleFavorite && (
+              <button
+                type="button"
+                onClick={() => onToggleFavorite(trend)}
+                title={favorite ? '取消收藏' : '加入选题'}
+                className="flex-shrink-0"
+              >
+                <Star className={`w-4 h-4 transition-colors ${
+                  favorite ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground hover:text-amber-400'
+                }`} />
+              </button>
+            )}
             <a
               href={trend.url}
               target="_blank"
