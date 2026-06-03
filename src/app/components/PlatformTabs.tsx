@@ -1,4 +1,4 @@
-import { Globe, Youtube, MessageSquare, Hash, Film, Image } from 'lucide-react';
+import { Globe, Youtube, MessageSquare, Hash, Film, Image, Video, Facebook } from 'lucide-react';
 
 interface PlatformTabsProps {
   selectedPlatform: string;
@@ -13,6 +13,8 @@ const platforms = [
   { id: 'google_news', label: 'Google News', icon: Globe },
   { id: 'tmdb', label: 'TMDb', icon: Film },
   { id: 'giphy', label: 'Giphy', icon: Image },
+  { id: 'tiktok', label: 'TikTok', icon: Video },
+  { id: 'facebook', label: 'Facebook', icon: Facebook },
 ];
 
 export function PlatformTabs({ selectedPlatform, onSelectPlatform }: PlatformTabsProps) {

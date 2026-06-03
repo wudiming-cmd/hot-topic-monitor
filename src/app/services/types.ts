@@ -7,7 +7,9 @@ export type Platform =
   | 'hackernews'
   | 'google_news'
   | 'tmdb'
-  | 'giphy';
+  | 'giphy'
+  | 'tiktok' // 注:官方无公开热点 API,真实数据需第三方数据商
+  | 'facebook'; // 注:自然内容无官方热榜 API,公开数据以广告资料库为主
 
 export type Category = 'news' | 'tech' | 'entertainment' | 'social' | 'meme';
 

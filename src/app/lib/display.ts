@@ -8,6 +8,8 @@ export const PLATFORM_META: Record<Platform, { label: string; chip: string }> = 
   google_news: { label: 'Google News', chip: 'bg-blue-500/10 text-blue-400' },
   tmdb: { label: 'TMDb', chip: 'bg-yellow-500/10 text-yellow-400' },
   giphy: { label: 'Giphy', chip: 'bg-green-500/10 text-green-400' },
+  tiktok: { label: 'TikTok', chip: 'bg-rose-500/10 text-rose-400' },
+  facebook: { label: 'Facebook', chip: 'bg-sky-500/10 text-sky-400' },
 };
 
 export const CATEGORY_META: Record<Category, { label: string; chip: string }> = {

@@ -164,6 +164,56 @@ const RAW_BY_SOURCE: Record<Platform, RawTrend[]> = {
       published_at: '7h ago', status: 'new',
     },
   ],
+  // 注:TikTok 官方无公开热点 API,以下为示意数据;真实接入需走第三方数据商
+  tiktok: [
+    {
+      source: 'tiktok', category: 'social',
+      title: '#SilentWalking 挑战席卷全网,2 亿次播放',
+      url: 'https://www.tiktok.com', popularity: 0.93, velocity: 0.95,
+      engagement_rate: 0.71, author: '@wellnessdaily', published_at: '2h ago', status: 'new',
+    },
+    {
+      source: 'tiktok', category: 'entertainment',
+      title: 'POV: 你妈发现了你的 TikTok 账号',
+      url: 'https://www.tiktok.com', popularity: 0.87, velocity: 0.9,
+      engagement_rate: 0.78, author: '@comedyqueen', published_at: '4h ago', status: 'rising',
+    },
+    {
+      source: 'tiktok', category: 'meme',
+      title: 'AI 翻唱经典老歌 - 新一轮二创模板',
+      url: 'https://www.tiktok.com',
+      media_url: 'https://picsum.photos/seed/tiktokai/400/300',
+      popularity: 0.79, velocity: 0.88, engagement_rate: 0.69,
+      author: '@musicremix', published_at: '5h ago', status: 'new',
+    },
+    {
+      source: 'tiktok', category: 'entertainment',
+      title: '60 秒看懂量子计算(科普区爆款)',
+      url: 'https://www.tiktok.com', popularity: 0.74, velocity: 0.66,
+      engagement_rate: 0.55, author: '@sciencebites', published_at: '9h ago', status: 'stable',
+    },
+  ],
+  // 注:Facebook 自然内容无官方热榜 API,以下为示意数据;公开数据以广告资料库为主
+  facebook: [
+    {
+      source: 'facebook', category: 'news',
+      title: 'Breaking: 全球科技峰会公布 AI 安全新框架',
+      url: 'https://www.facebook.com', popularity: 0.85, velocity: 0.72,
+      engagement_rate: 0.34, author: 'Tech Insider', published_at: '3h ago', status: 'rising',
+    },
+    {
+      source: 'facebook', category: 'social',
+      title: '这个本地咖啡馆的故事感动了 50 万人',
+      url: 'https://www.facebook.com', popularity: 0.76, velocity: 0.63,
+      engagement_rate: 0.58, author: 'Humans of City', published_at: '6h ago', status: 'stable',
+    },
+    {
+      source: 'facebook', category: 'entertainment',
+      title: '怀旧:90 年代经典动画即将重制',
+      url: 'https://www.facebook.com', popularity: 0.7, velocity: 0.59,
+      engagement_rate: 0.47, author: 'Retro Fans', published_at: '11h ago', status: 'stable',
+    },
+  ],
 };
 
 const ALL_SOURCES = Object.keys(RAW_BY_SOURCE) as Platform[];
@@ -243,11 +293,13 @@ export const mockMonthlyStats: MonthlyStats = {
     { date: '6/30', total: 103, rising: 38, new: 24 },
   ],
   platformDistribution: [
-    { name: 'YouTube', value: 32, color: '#ef4444' },
-    { name: 'Reddit', value: 24, color: '#f97316' },
-    { name: 'Hacker News', value: 18, color: '#f59e0b' },
-    { name: 'Google News', value: 15, color: '#3b82f6' },
-    { name: 'TMDb', value: 7, color: '#eab308' },
+    { name: 'YouTube', value: 26, color: '#ef4444' },
+    { name: 'Reddit', value: 18, color: '#f97316' },
+    { name: 'TikTok', value: 14, color: '#f43f5e' },
+    { name: 'Hacker News', value: 13, color: '#f59e0b' },
+    { name: 'Facebook', value: 10, color: '#0ea5e9' },
+    { name: 'Google News', value: 9, color: '#3b82f6' },
+    { name: 'TMDb', value: 6, color: '#eab308' },
     { name: 'Giphy', value: 4, color: '#10b981' },
   ],
   categoryPerformance: [

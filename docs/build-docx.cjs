@@ -139,7 +139,7 @@ children.push(p('默认权重 velocity:popularity:engagement = 0.5 : 0.3 : 0.2�
 children.push(h1('4. 功能需求'));
 children.push(h2('4.1 实时监控页（✅ 已实现）'));
 [
-  '综合榜 + 分平台榜：平台 Tab（综合/YouTube/Reddit/Hacker News/Google News/TMDb/Giphy）。',
+  '综合榜 + 分平台榜：平台 Tab（综合/YouTube/Reddit/Hacker News/Google News/TMDb/Giphy/TikTok/Facebook）。TikTok/Facebook 已就绪,真实数据 TikTok 需第三方、Facebook 以广告资料库为主(见 §6.2)。',
   '分类筛选：全部/新闻/科技/娱乐/社交/梗图。',
   '关键词搜索：按标题/作者过滤。',
   '多维排序：综合分/绝对热度/上升速度/互动率/最新发布。',
@@ -260,8 +260,10 @@ children.push(makeTable(
 children.push(spacer());
 children.push(h2('6.2 广告情报 & 扩展（B/C 档）'));
 children.push(bullet('Meta 广告资料库（广告情报页数据源，需访问令牌）。'));
+children.push(bullet('TikTok（前端已就绪）：官方无公开热点 API，真实公开热点数据须走第三方数据商（如 Tikapi 等）。'));
+children.push(bullet('Facebook（前端已就绪）：自然内容无官方热榜 API，FB 侧公开数据以广告资料库为主。'));
 children.push(bullet('Tenor、Imgflip（梗图，免费/免 key）。'));
-children.push(bullet('X/Twitter（API v2，按量付费，慎用）、Pinterest、TikTok（无官方公开 API，需第三方）。'));
+children.push(bullet('X/Twitter（API v2，按量付费，慎用）、Pinterest。'));
 children.push(h2('6.3 密钥管理'));
 children.push(p('所有 API key 走环境变量 / secret 管理，不进代码库。'));
 
