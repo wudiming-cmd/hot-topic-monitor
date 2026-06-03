@@ -1,18 +1,25 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
   TrendingUp, Flame, Zap, TrendingDown, Activity, BarChart3, Radar,
   AlertCircle, Megaphone, Sun, Moon, Star,
 } from 'lucide-react';
 import { MetricCard } from './components/MetricCard';
 import { TrendList } from './components/TrendList';
+import { MemeGallery } from './components/MemeGallery';
 import { PlatformTabs } from './components/PlatformTabs';
-import { MonthlyDashboard } from './components/MonthlyDashboard';
 import { Toolbar } from './components/Toolbar';
 import { TrendDetail } from './components/TrendDetail';
 import { FavoritesPanel } from './components/FavoritesPanel';
 import { SourceStatusBar } from './components/SourceStatusBar';
-import { AdIntelligence } from './components/AdIntelligence';
 import { useTrends } from './hooks/useTrends';
+
+// 懒加载较重的视图(月度含 recharts、广告情报),减小首屏体积
+const MonthlyDashboard = lazy(() =>
+  import('./components/MonthlyDashboard').then((m) => ({ default: m.MonthlyDashboard })),
+);
+const AdIntelligence = lazy(() =>
+  import('./components/AdIntelligence').then((m) => ({ default: m.AdIntelligence })),
+);
 import { useTheme } from './hooks/useTheme';
 import { useFavorites } from './hooks/useFavorites';
 import { exportTrendsCSV, exportTrendsJSON } from './services/export';
@@ -231,6 +238,13 @@ export default function App() {
               />
               {loading ? (
                 <TrendListSkeleton />
+              ) : selectedCategory === 'meme' ? (
+                <MemeGallery
+                  memes={displayedItems}
+                  onSelect={openDetail}
+                  isFavorite={isFavorite}
+                  onToggleFavorite={toggleFavorite}
+                />
               ) : (
                 <TrendList
                   trends={displayedItems}
@@ -250,8 +264,11 @@ export default function App() {
           </>
         )}
 
-        {viewMode === 'monthly' && <MonthlyDashboard />}
-        {viewMode === 'ads' && <AdIntelligence />}
+        {(viewMode === 'monthly' || viewMode === 'ads') && (
+          <Suspense fallback={<ViewLoading />}>
+            {viewMode === 'monthly' ? <MonthlyDashboard /> : <AdIntelligence />}
+          </Suspense>
+        )}
       </div>
 
       {/* 详情抽屉 */}
@@ -272,6 +289,15 @@ export default function App() {
         onSetNote={setFavoriteNote}
         onClear={clearFavorites}
       />
+    </div>
+  );
+}
+
+function ViewLoading() {
+  return (
+    <div className="flex items-center justify-center py-24 text-muted-foreground">
+      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mr-3" />
+      加载中…
     </div>
   );
 }

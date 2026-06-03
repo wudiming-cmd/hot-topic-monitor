@@ -1,16 +1,10 @@
-import { ExternalLink, Star } from 'lucide-react';
+import { ExternalLink, Star, Layers } from 'lucide-react';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from './ui/sheet';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import type { TrendItem } from '../services/types';
-
-const CATEGORY_LABEL: Record<string, string> = {
-  news: '新闻', tech: '科技', entertainment: '娱乐', social: '社交', meme: '梗图',
-};
-const STATUS_LABEL: Record<string, string> = {
-  new: '新冒出', rising: '快速上升', stable: '持续在榜', declining: '已回落',
-};
+import { CATEGORY_META, PLATFORM_META, STATUS_META } from '../lib/display';
 
 interface TrendDetailProps {
   trend: TrendItem | null;
@@ -28,7 +22,7 @@ export function TrendDetail({ trend, open, onOpenChange, isFavorite, onToggleFav
           <>
             <SheetHeader>
               <SheetDescription className="font-mono">
-                {trend.source} · {CATEGORY_LABEL[trend.category] ?? trend.category} · {STATUS_LABEL[trend.status]}
+                {PLATFORM_META[trend.source].label} · {CATEGORY_META[trend.category].label} · {STATUS_META[trend.status].full}
               </SheetDescription>
               <SheetTitle className="text-lg leading-snug">{trend.title}</SheetTitle>
             </SheetHeader>
@@ -78,11 +72,17 @@ export function TrendDetail({ trend, open, onOpenChange, isFavorite, onToggleFav
               {/* 跨平台来源 */}
               {trend.sources && trend.sources.length > 0 && (
                 <div>
-                  <p className="text-xs text-muted-foreground mb-2">出现平台</p>
+                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                    {trend.sources.length > 1 && <Layers className="w-3.5 h-3.5 text-primary" />}
+                    出现平台
+                    {trend.sources.length > 1 && (
+                      <span className="text-primary font-medium">· {trend.sources.length} 个平台同时在火</span>
+                    )}
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {trend.sources.map((s) => (
-                      <span key={s} className="px-2 py-1 rounded text-xs font-medium bg-muted/50 text-foreground">
-                        {s}
+                      <span key={s} className={`px-2.5 py-1 rounded text-xs font-medium ${PLATFORM_META[s].chip}`}>
+                        {PLATFORM_META[s].label}
                       </span>
                     ))}
                   </div>

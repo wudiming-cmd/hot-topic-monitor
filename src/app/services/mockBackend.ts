@@ -28,6 +28,13 @@ const RAW_BY_SOURCE: Record<Platform, RawTrend[]> = {
       url: 'https://news.ycombinator.com', popularity: 0.61, velocity: 0.52,
       engagement_rate: 0.39, author: 'wasm-team', published_at: '11h ago', status: 'stable',
     },
+    // 跨平台重复:Gemini 3.0 也上了 HN 热榜
+    {
+      source: 'hackernews', category: 'tech',
+      title: 'Google announces Gemini 3.0 with breakthrough reasoning',
+      url: 'https://news.ycombinator.com', popularity: 0.9, velocity: 0.82,
+      engagement_rate: 0.47, author: 'google-ai', published_at: '3h ago', status: 'rising',
+    },
   ],
   youtube: [
     {
@@ -53,6 +60,19 @@ const RAW_BY_SOURCE: Record<Platform, RawTrend[]> = {
       title: 'Taylor Swift Announces Surprise Album Drop',
       url: 'https://youtube.com', popularity: 0.91, velocity: 0.38,
       engagement_rate: 0.49, author: 'Taylor Swift', published_at: '18h ago', status: 'declining',
+    },
+    // 跨平台重复:同一话题也出现在 YouTube(用于演示去重合并)
+    {
+      source: 'youtube', category: 'tech',
+      title: 'Google announces Gemini 3.0 with breakthrough reasoning',
+      url: 'https://youtube.com', popularity: 0.83, velocity: 0.79,
+      engagement_rate: 0.41, author: 'Google', published_at: '3h ago', status: 'rising',
+    },
+    {
+      source: 'youtube', category: 'entertainment',
+      title: 'Dune: Part Three Breaks Opening Weekend Records',
+      url: 'https://youtube.com', popularity: 0.8, velocity: 0.77,
+      engagement_rate: 0.4, author: 'Warner Bros', published_at: '6h ago', status: 'rising',
     },
   ],
   reddit: [
@@ -103,6 +123,13 @@ const RAW_BY_SOURCE: Record<Platform, RawTrend[]> = {
       title: 'EU Announces Universal Charging Standard 2.0',
       url: 'https://news.google.com', popularity: 0.72, velocity: 0.44,
       engagement_rate: 0.27, published_at: '16h ago', status: 'declining',
+    },
+    // 跨平台重复:Dune 3 也上了 Google News
+    {
+      source: 'google_news', category: 'entertainment',
+      title: 'Dune: Part Three Breaks Opening Weekend Records',
+      url: 'https://news.google.com', popularity: 0.85, velocity: 0.74,
+      engagement_rate: 0.31, published_at: '6h ago', status: 'rising',
     },
   ],
   tmdb: [

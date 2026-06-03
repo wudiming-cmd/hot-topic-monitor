@@ -33,4 +33,18 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
+
+  build: {
+    // charts(recharts)较大但已懒加载,仅打开月度页时才下载,放宽告警阈值
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        // 把重型第三方库拆成独立 chunk,改善缓存与首屏
+        manualChunks: {
+          charts: ['recharts'],
+          icons: ['lucide-react'],
+        },
+      },
+    },
+  },
 })
