@@ -1,7 +1,7 @@
 // 贴合产品方向(Theme/Keyboard/Wallpaper/Sticker)的内容机会 mock。
 // 覆盖 Google Trends / Pinterest / Reddit / App Store / Google Play / X / TikTok / 节日库,以美区为主。
 // 字段 name/keywords 供分类引擎判定;category/tags/products 由引擎产出(不在此写死)。
-import type { ContentPlatform, Country } from './types';
+import type { ContentPlatform, Country, OppExtra } from './types';
 
 export interface RawOpportunity {
   id: string;
@@ -13,6 +13,7 @@ export interface RawOpportunity {
   url: string;
   description?: string;
   keywords: string[];
+  extra?: OppExtra;
 }
 
 export const MOCK_RAW_OPPORTUNITIES: RawOpportunity[] = [
@@ -36,4 +37,30 @@ export const MOCK_RAW_OPPORTUNITIES: RawOpportunity[] = [
   { id: 'o18', name: 'Brat Summer 绿色美学', platform: 'x', country: 'US', heat_signal: '社媒刷屏', heat_score: 0.76, url: 'https://x.com', keywords: ['brat summer', 'green', 'meme'] },
   { id: 'o19', name: 'Liminal spaces 视觉', platform: 'reddit', country: 'US', heat_signal: 'Upvotes 900', heat_score: 0.5, url: 'https://reddit.com', keywords: ['liminal', 'backrooms'] }, // 预期:无命中→待确认
   { id: 'o20', name: 'US Election 2026 polls', platform: 'google_trends', country: 'US', heat_signal: '搜索激增', heat_score: 0.99, url: 'https://trends.google.com', keywords: ['election', 'politics', 'vote'] }, // 预期:命中排除词→过滤
+  // App Store 评论聚合需求(示意:真实由后端 /opportunities 聚合产出,携带 extra)
+  {
+    id: 'o21', name: '需求: 更多 anime 壁纸/图标', platform: 'app_store', country: 'US',
+    heat_signal: '9 条评论提及 · ScreenKit/aesthetic kit · 均分 1.6★', heat_score: 0.6,
+    url: 'https://apps.apple.com/us/charts/iphone', keywords: ['anime', 'wallpaper', 'icon'],
+    extra: {
+      mentions: 9, apps: ['ScreenKit', 'aesthetic kit'], avgRating: 1.6,
+      examples: [
+        'Please add more anime themes and wallpapers, the current selection is tiny',
+        'Wish there were more anime icon packs, willing to pay for them',
+        'Need anime widgets to match my anime wallpaper, none available',
+      ],
+    },
+  },
+  {
+    id: 'o22', name: '需求: 锁屏小组件定制', platform: 'app_store', country: 'US',
+    heat_signal: '7 条评论提及 · Widgetsmith/Color Widgets · 均分 2.1★', heat_score: 0.5,
+    url: 'https://apps.apple.com/us/charts/iphone', keywords: ['lock screen', 'widget'],
+    extra: {
+      mentions: 7, apps: ['Widgetsmith', 'Color Widgets'], avgRating: 2.1,
+      examples: [
+        'Would love more lock screen widget styles, only a few options now',
+        'Please add customizable lock screen widgets with aesthetic fonts',
+      ],
+    },
+  },
 ];

@@ -50,9 +50,18 @@ export interface ContentOpportunity {
   tags: string[];
   recommended_products: ProductType[];
   status: OppStatus;
+  // 需求聚合明细(App Store 评论聚合时携带:提及频次/来源/示例摘录)
+  extra?: OppExtra;
   // 后续阶段评分预留字段(第一阶段不计算)
   score?: number | null;
   grade?: 'S' | 'A' | 'B' | 'none' | null;
+}
+
+export interface OppExtra {
+  mentions?: number; // 评论提及次数
+  apps?: string[]; // 来源 App
+  avgRating?: number; // 平均评分
+  examples?: string[]; // 示例摘录
 }
 
 // ===== 配置:抓取规则(重新规划版) =====

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Search, Star, EyeOff, HelpCircle, ExternalLink, Inbox, Flame } from 'lucide-react';
+import { Search, Star, EyeOff, HelpCircle, ExternalLink, Inbox, Flame, MessageSquareQuote } from 'lucide-react';
 import { useOpportunities } from '../../hooks/useOpportunities';
+import { OpportunityDetail } from './OpportunityDetail';
 import {
   CATEGORY_CHIP, CATEGORY_LABEL, COUNTRY_LABEL, PLATFORM_LABEL, PRODUCT_LABEL, STATUS_LABEL,
 } from '../../services/content/rules';
@@ -16,8 +17,11 @@ const PRODUCTS: (ProductType | 'all')[] = ['all', 'theme', 'keyboard', 'wallpape
 export function OpportunityList({ classifyRules }: { classifyRules: ClassifyRules }) {
   const [query, setQuery] = useState<OppQuery>({ status: 'active' });
   const { items, counts, allTags, loading, error, fetchedAt, setStatus } = useOpportunities(query, classifyRules);
+  const [detail, setDetail] = useState<ContentOpportunity | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const set = (patch: Partial<OppQuery>) => setQuery((q) => ({ ...q, ...patch }));
+  const openDetail = (o: ContentOpportunity) => { setDetail(o); setDetailOpen(true); };
 
   return (
     <div className="space-y-5">
@@ -89,7 +93,7 @@ export function OpportunityList({ classifyRules }: { classifyRules: ClassifyRule
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {items.map((o) => <Row key={o.id} o={o} onStatus={setStatus} />)}
+            {items.map((o) => <Row key={o.id} o={o} onStatus={setStatus} onOpen={openDetail} />)}
           </div>
         )}
       </div>
@@ -99,11 +103,13 @@ export function OpportunityList({ classifyRules }: { classifyRules: ClassifyRule
           上次抓取：{new Date(fetchedAt).toLocaleString('zh-CN')} · 共 {items.length} 条
         </p>
       )}
+
+      <OpportunityDetail opp={detail} open={detailOpen} onOpenChange={setDetailOpen} onStatus={setStatus} />
     </div>
   );
 }
 
-function Row({ o, onStatus }: { o: ContentOpportunity; onStatus: (id: string, s: OppStatus) => void }) {
+function Row({ o, onStatus, onOpen }: { o: ContentOpportunity; onStatus: (id: string, s: OppStatus) => void; onOpen: (o: ContentOpportunity) => void }) {
   const fav = o.status === 'favorited';
   const ignored = o.status === 'ignored';
   return (
@@ -111,7 +117,15 @@ function Row({ o, onStatus }: { o: ContentOpportunity; onStatus: (id: string, s:
       <div className="flex items-start gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-2 mb-2">
-            <h3 className="text-base font-medium text-foreground flex-1">{o.name}</h3>
+            <button type="button" onClick={() => onOpen(o)}
+              className="text-left text-base font-medium text-foreground flex-1 hover:text-primary transition-colors cursor-pointer">
+              {o.name}
+            </button>
+            {o.extra?.examples?.length ? (
+              <span className="flex items-center gap-1 text-xs text-primary flex-shrink-0" title="含需求示例摘录">
+                <MessageSquareQuote className="w-3.5 h-3.5" />{o.extra.mentions ?? o.extra.examples.length}
+              </span>
+            ) : null}
             <a href={o.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary flex-shrink-0" title="来源链接">
               <ExternalLink className="w-4 h-4" />
             </a>
