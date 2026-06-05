@@ -5,7 +5,7 @@ import { fetchHackerNews } from './adapters/hackernews.js';
 import { fetchRedditHot, toTrendItems } from './adapters/reddit.js';
 import { fetchGoogleNews } from './adapters/googlenews.js';
 import { fetchGoogleTrends } from './adapters/googletrends.js';
-import { fetchAppStoreReviewSignals } from './adapters/appstore.js';
+import { fetchAppStoreDemands } from './adapters/appstore.js';
 import { fetchXTrends } from './adapters/x.js';
 import { fetchTikTokTrendsHeadless, fetchPinterestTodayHeadless } from './adapters/headless.js';
 import { classify } from './classify.js';
@@ -144,19 +144,21 @@ app.get('/opportunities', async (_req, res) => {
     } catch (e) { statuses.push({ source: src, ok: false, count: 0, error: String(e.message || e) }); log(`${src} skipped:`, e.message); }
   }
 
-  // App Store 竞品评论(免 Key,挖需求)
+  // App Store 竞品评论 → 需求聚合提炼(按主题归并,带频次)
   try {
-    const reviews = await fetchAppStoreReviewSignals({ perApp: 8 });
-    reviews.forEach((r, i) => {
-      const phrase = (r.name && r.name.trim().length > 8) ? r.name.trim() : String(r.content).slice(0, 60);
+    const demands = await fetchAppStoreDemands({ pages: 2 });
+    demands.forEach((dmd, i) => {
       candidates.push({
-        id: `as_${i}`, name: `需求: ${phrase}`, platform: 'app_store', country: 'US',
-        heat_signal: `评分 ${r.rating}★ · ${r.app}`, heat_score: 0.4,
-        url: `https://apps.apple.com/us/app/id${r.appId}`,
-        keywords: [...words(r.name), ...words(r.content)].slice(0, 12),
+        id: `as_${i}`, name: `需求: ${dmd.label}`, platform: 'app_store', country: 'US',
+        heat_signal: `${dmd.count} 条评论提及 · ${dmd.apps.slice(0, 2).join('/')}${dmd.apps.length > 2 ? '等' : ''} · 均分 ${dmd.avgRating}★`,
+        heat_score: clamp01(dmd.count / 15),
+        url: 'https://apps.apple.com/us/charts/iphone',
+        // 用英文示例文本分类(中文标签无法被关键词引擎命中),内容相关需求(anime/审美)可正确归类
+        keywords: words(dmd.examples.join(' ')).slice(0, 15),
+        _demand: dmd, // 携带聚合明细(频次/示例/来源)供输出
       });
     });
-    statuses.push({ source: 'app_store', ok: true, count: reviews.length });
+    statuses.push({ source: 'app_store', ok: true, count: demands.length });
   } catch (e) { statuses.push({ source: 'app_store', ok: false, count: 0, error: String(e.message || e) }); log('AppStore failed:', e.message); }
 
   // 统一分类 + 排除
@@ -169,10 +171,14 @@ app.get('/opportunities', async (_req, res) => {
     // 宽口径趋势源(Google Trends / X / TikTok / Pinterest 偏泛):只保留命中内容方向的,丢弃无关泛趋势。
     // App Store 已过滤为"需求型"评论,即使未归类也作为待确认需求信号保留。
     if (['google_trends', 'x', 'tiktok', 'pinterest'].includes(cand.platform) && c.category === 'pending') { irrelevantCount++; continue; }
+    const { _demand, ...rest } = cand;
     items.push({
-      ...cand, fetched_at,
-      category: c.category, tags: c.tags, recommended_products: c.recommended_products,
+      ...rest, fetched_at,
+      category: c.category, tags: c.tags,
+      // 聚合需求的产品映射来自主题词库(比关键词分类更准)
+      recommended_products: _demand?.products ?? c.recommended_products,
       status: c.category === 'pending' ? 'pending' : 'new', score: null, grade: null,
+      ...(_demand ? { extra: { mentions: _demand.count, apps: _demand.apps, avgRating: _demand.avgRating, examples: _demand.examples } } : {}),
     });
   }
   items.sort((a, b) => b.heat_score - a.heat_score);
