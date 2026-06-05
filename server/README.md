@@ -58,8 +58,16 @@ VITE_API_BASE_URL=http://localhost:8787
 > 说明:相邻两次采集间隔太短(秒级)时热度几乎不变 → 状态多为"持续",velocity≈0,属正常;
 > 拉开真实时间间隔(定时采集)后才会体现真实涨落。
 
+## X / TikTok / Pinterest(已接入)
+
+- **X (Twitter)**:免 Key,抓 trends24.in 美区热搜 → /opportunities(泛热搜,仅保留内容相关项)。✅ 开箱可用
+- **TikTok / Pinterest**:无免 Key 接口,需无头浏览器。已用 Playwright 实现并接入,**默认未安装时优雅跳过**(其它源不受影响)。
+  启用:`cd server && npm i -D playwright && npx playwright install chromium`,重启即生效。
+  - TikTok → Creative Center 热门话题标签;Pinterest → Today 飙升关键词。
+  - 选择器可能随站点改版需微调。
+
 ## 下一步可扩展
 
-- Pinterest / X(trends24)/ TikTok(Creative Center 无头渲染)适配器。
 - 把 `observations` 升级为带去重键的话题级追踪;Postgres 持久化。
 - 分类规则改为读数据库,与前端配置页打通。
+- App Store/Play 评论的"需求"做聚合/NLP 提炼,而非逐条。

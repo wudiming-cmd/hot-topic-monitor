@@ -6,6 +6,8 @@ import { fetchRedditHot, toTrendItems } from './adapters/reddit.js';
 import { fetchGoogleNews } from './adapters/googlenews.js';
 import { fetchGoogleTrends } from './adapters/googletrends.js';
 import { fetchAppStoreReviewSignals } from './adapters/appstore.js';
+import { fetchXTrends } from './adapters/x.js';
+import { fetchTikTokTrendsHeadless, fetchPinterestTodayHeadless } from './adapters/headless.js';
 import { classify } from './classify.js';
 import { clamp01 } from './scoring.js';
 import { CLASSIFY_RULES, REDDIT_CONTENT_SUBS, REDDIT_MIN_UPVOTES } from './rules.js';
@@ -117,6 +119,31 @@ app.get('/opportunities', async (_req, res) => {
     statuses.push({ source: 'google_trends', ok: true, count: trends.length });
   } catch (e) { statuses.push({ source: 'google_trends', ok: false, count: 0, error: String(e.message || e) }); log('GTrends failed:', e.message); }
 
+  // X (Twitter) 美区热搜(免 Key,trends24)
+  try {
+    const xs = await fetchXTrends('united-states', 25);
+    xs.forEach((t, i) => candidates.push({
+      id: `x_${i}`, name: t.term, platform: 'x', country: 'US',
+      heat_signal: '美区热搜', heat_score: clamp01((25 - i) / 25), url: t.url, keywords: words(t.term),
+    }));
+    statuses.push({ source: 'x', ok: true, count: xs.length });
+  } catch (e) { statuses.push({ source: 'x', ok: false, count: 0, error: String(e.message || e) }); log('X failed:', e.message); }
+
+  // TikTok / Pinterest(需 Playwright,未安装则优雅跳过)
+  for (const [src, fn, plat] of [
+    ['tiktok', fetchTikTokTrendsHeadless, 'tiktok'],
+    ['pinterest', fetchPinterestTodayHeadless, 'pinterest'],
+  ]) {
+    try {
+      const list = await fn(20);
+      list.forEach((t, i) => candidates.push({
+        id: `${src}_${i}`, name: t.term, platform: plat, country: 'US',
+        heat_signal: src === 'tiktok' ? '热门标签' : 'Today 飙升', heat_score: clamp01((20 - i) / 20), url: t.url, keywords: words(t.term),
+      }));
+      statuses.push({ source: src, ok: true, count: list.length });
+    } catch (e) { statuses.push({ source: src, ok: false, count: 0, error: String(e.message || e) }); log(`${src} skipped:`, e.message); }
+  }
+
   // App Store 竞品评论(免 Key,挖需求)
   try {
     const reviews = await fetchAppStoreReviewSignals({ perApp: 8 });
@@ -139,9 +166,9 @@ app.get('/opportunities', async (_req, res) => {
   for (const cand of candidates) {
     const c = classify(cand.name, cand.keywords, CLASSIFY_RULES);
     if (c.excluded) { excludedCount++; continue; }
-    // Google Trends 每日热搜偏泛:只保留命中内容方向的,丢弃无关泛趋势。
+    // 宽口径趋势源(Google Trends / X / TikTok / Pinterest 偏泛):只保留命中内容方向的,丢弃无关泛趋势。
     // App Store 已过滤为"需求型"评论,即使未归类也作为待确认需求信号保留。
-    if (cand.platform === 'google_trends' && c.category === 'pending') { irrelevantCount++; continue; }
+    if (['google_trends', 'x', 'tiktok', 'pinterest'].includes(cand.platform) && c.category === 'pending') { irrelevantCount++; continue; }
     items.push({
       ...cand, fetched_at,
       category: c.category, tags: c.tags, recommended_products: c.recommended_products,
