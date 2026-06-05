@@ -1,14 +1,19 @@
 import { Plus, Trash2, Power } from 'lucide-react';
 import { PLATFORM_LABEL, PRODUCT_LABEL } from '../../services/content/rules';
-import type { ContentPlatform, Country, CrawlRule, ProductType } from '../../services/content/types';
+import type {
+  ContentPlatform, Country, CrawlFrequency, CrawlMode, CrawlRule, ProductType, TrendWindow,
+} from '../../services/content/types';
 
 const PLATFORMS: ContentPlatform[] = ['google_trends', 'pinterest', 'reddit', 'app_store', 'google_play', 'x', 'tiktok', 'holiday'];
 const COUNTRIES: Country[] = ['US', 'GB', 'JP', 'global'];
 const PRODUCTS: ProductType[] = ['theme', 'keyboard', 'wallpaper', 'sticker'];
-const FREQS: CrawlRule['frequency'][] = ['realtime', 'hourly', 'daily', 'weekly'];
-const FREQ_LABEL: Record<CrawlRule['frequency'], string> = { realtime: '实时', hourly: '每小时', daily: '每天', weekly: '每周' };
+const FREQS: CrawlFrequency[] = ['realtime', 'hourly', 'daily', 'weekly'];
+const FREQ_LABEL: Record<CrawlFrequency, string> = { realtime: '实时', hourly: '每小时', daily: '每天', weekly: '每周' };
+const WINDOWS: (TrendWindow | '')[] = ['', 'realtime', '24h', '7d'];
+const WINDOW_LABEL: Record<string, string> = { '': '不限窗口', realtime: '实时', '24h': '24h上升', '7d': '7天' };
 
 const toList = (s: string) => s.split(/[,，\n]/).map((x) => x.trim()).filter(Boolean);
+const numOrUndef = (s: string) => (s.trim() === '' ? undefined : Number(s));
 
 export function CrawlRulesConfig({ rules, onChange }: { rules: CrawlRule[]; onChange: (r: CrawlRule[]) => void }) {
   const update = (id: string, patch: Partial<CrawlRule>) =>
@@ -17,13 +22,17 @@ export function CrawlRulesConfig({ rules, onChange }: { rules: CrawlRule[]; onCh
   const add = () =>
     onChange([
       ...rules,
-      { id: `cr_${rules.length}_${rules.reduce((a, r) => a + r.id.length, 0)}`, platform: 'reddit', country: 'US', seed_keywords: [], exclude_keywords: [], product_types: ['wallpaper'], frequency: 'daily', enabled: true },
+      {
+        id: `cr_${rules.length}_${rules.reduce((a, r) => a + r.id.length, 0)}`,
+        platform: 'reddit', country: 'US', mode: 'auto', targets: [], seed_keywords: [],
+        exclude_keywords: [], product_types: ['wallpaper'], frequency: 'daily', enabled: true,
+      },
     ]);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">配置各平台/国家的抓取规则:种子关键词、排除词、关注产品、频率与开关。</p>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <p className="text-sm text-muted-foreground">定向抓取规则:抓取目标(版块/标签/应用) + 内容方向种子词 + 排除词 + 热度门槛 + 产品 + 频率。</p>
         <button onClick={add} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground">
           <Plus className="w-4 h-4" />新增规则
         </button>
@@ -32,7 +41,8 @@ export function CrawlRulesConfig({ rules, onChange }: { rules: CrawlRule[]; onCh
       <div className="space-y-3">
         {rules.map((r) => (
           <div key={r.id} className={`bg-card border rounded-xl p-4 ${r.enabled ? 'border-border' : 'border-border opacity-60'}`}>
-            <div className="flex items-center gap-3 mb-3 flex-wrap">
+            {/* 头部:平台/国家/模式/频率/窗口 + 启停/删除 */}
+            <div className="flex items-end gap-3 mb-3 flex-wrap">
               <Field label="平台">
                 <select value={r.platform} onChange={(e) => update(r.id, { platform: e.target.value as ContentPlatform })} className="select">
                   {PLATFORMS.map((p) => <option key={p} value={p} className="bg-card">{PLATFORM_LABEL[p]}</option>)}
@@ -43,13 +53,24 @@ export function CrawlRulesConfig({ rules, onChange }: { rules: CrawlRule[]; onCh
                   {COUNTRIES.map((c) => <option key={c} value={c} className="bg-card">{c}</option>)}
                 </select>
               </Field>
+              <Field label="模式">
+                <select value={r.mode} onChange={(e) => update(r.id, { mode: e.target.value as CrawlMode })} className="select">
+                  <option value="auto" className="bg-card">自动</option>
+                  <option value="manual" className="bg-card">人工</option>
+                </select>
+              </Field>
               <Field label="频率">
-                <select value={r.frequency} onChange={(e) => update(r.id, { frequency: e.target.value as CrawlRule['frequency'] })} className="select">
+                <select value={r.frequency} onChange={(e) => update(r.id, { frequency: e.target.value as CrawlFrequency })} className="select">
                   {FREQS.map((f) => <option key={f} value={f} className="bg-card">{FREQ_LABEL[f]}</option>)}
                 </select>
               </Field>
+              <Field label="趋势窗口">
+                <select value={r.trend_window ?? ''} onChange={(e) => update(r.id, { trend_window: (e.target.value || undefined) as TrendWindow | undefined })} className="select">
+                  {WINDOWS.map((w) => <option key={w} value={w} className="bg-card">{WINDOW_LABEL[w]}</option>)}
+                </select>
+              </Field>
               <div className="ml-auto flex items-center gap-2">
-                <button onClick={() => update(r.id, { enabled: !r.enabled })} title={r.enabled ? '已启用' : '已停用'}
+                <button onClick={() => update(r.id, { enabled: !r.enabled })}
                   className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium border ${r.enabled ? 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10' : 'border-border text-muted-foreground'}`}>
                   <Power className="w-3.5 h-3.5" />{r.enabled ? '启用' : '停用'}
                 </button>
@@ -59,27 +80,48 @@ export function CrawlRulesConfig({ rules, onChange }: { rules: CrawlRule[]; onCh
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="种子关键词(逗号分隔)" full>
-                <input defaultValue={r.seed_keywords.join(', ')} onBlur={(e) => update(r.id, { seed_keywords: toList(e.target.value) })} className="inp" placeholder="aesthetic, wallpaper…" />
+            {/* 抓取目标 */}
+            <Field label="抓取目标(版块/标签/应用/查询词,逗号分隔)" full>
+              <input defaultValue={r.targets.join(', ')} onBlur={(e) => update(r.id, { targets: toList(e.target.value) })} className="inp" placeholder="r/iOSsetups, #homescreen, Themepack…" />
+            </Field>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <Field label="内容方向种子词(相关性约束)" full>
+                <input defaultValue={r.seed_keywords.join(', ')} onBlur={(e) => update(r.id, { seed_keywords: toList(e.target.value) })} className="inp" placeholder="aesthetic, wallpaper, theme…" />
               </Field>
-              <Field label="排除词(逗号分隔)" full>
+              <Field label="排除词" full>
                 <input defaultValue={r.exclude_keywords.join(', ')} onBlur={(e) => update(r.id, { exclude_keywords: toList(e.target.value) })} className="inp" placeholder="news, politics…" />
               </Field>
             </div>
 
-            <div className="mt-3">
-              <span className="text-xs text-muted-foreground mr-2">关注产品:</span>
-              {PRODUCTS.map((p) => {
-                const on = r.product_types.includes(p);
-                return (
-                  <button key={p} onClick={() => update(r.id, { product_types: on ? r.product_types.filter((x) => x !== p) : [...r.product_types, p] })}
-                    className={`mr-2 px-2 py-0.5 rounded text-xs font-medium border ${on ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-400' : 'border-border text-muted-foreground'}`}>
-                    {PRODUCT_LABEL[p]}
-                  </button>
-                );
-              })}
+            {/* 门槛 + 产品 */}
+            <div className="flex items-end gap-3 mt-3 flex-wrap">
+              <Field label="热度门槛(>N)">
+                <input type="number" defaultValue={r.min_engagement ?? ''} onBlur={(e) => update(r.id, { min_engagement: numOrUndef(e.target.value) })} className="inp w-28" placeholder="如 200" />
+              </Field>
+              <Field label="取Top评论数">
+                <input type="number" defaultValue={r.top_comments ?? ''} onBlur={(e) => update(r.id, { top_comments: numOrUndef(e.target.value) })} className="inp w-28" placeholder="如 50" />
+              </Field>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">关注产品</span>
+                <div>
+                  {PRODUCTS.map((p) => {
+                    const on = r.product_types.includes(p);
+                    return (
+                      <button key={p} onClick={() => update(r.id, { product_types: on ? r.product_types.filter((x) => x !== p) : [...r.product_types, p] })}
+                        className={`mr-2 px-2 py-1 rounded text-xs font-medium border ${on ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-400' : 'border-border text-muted-foreground'}`}>
+                        {PRODUCT_LABEL[p]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
+
+            {/* 备注 */}
+            <Field label="备注" full>
+              <input defaultValue={r.note ?? ''} onBlur={(e) => update(r.id, { note: e.target.value })} className="inp" placeholder="抓取说明 / 人工监测要点…" />
+            </Field>
           </div>
         ))}
       </div>
@@ -91,7 +133,7 @@ export function CrawlRulesConfig({ rules, onChange }: { rules: CrawlRule[]; onCh
 
 function Field({ label, children }: { label: string; children: React.ReactNode; full?: boolean }) {
   return (
-    <label className="flex flex-col gap-1">
+    <label className="flex flex-col gap-1 mt-3 first:mt-0">
       <span className="text-xs text-muted-foreground">{label}</span>
       {children}
     </label>

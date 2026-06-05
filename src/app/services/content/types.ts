@@ -55,15 +55,25 @@ export interface ContentOpportunity {
   grade?: 'S' | 'A' | 'B' | 'none' | null;
 }
 
-// ===== 配置:抓取规则 =====
+// ===== 配置:抓取规则(重新规划版) =====
+export type CrawlMode = 'auto' | 'manual'; // 自动抓取 / 人工监测
+export type CrawlFrequency = 'realtime' | 'hourly' | 'daily' | 'weekly';
+export type TrendWindow = 'realtime' | '24h' | '7d';
+
 export interface CrawlRule {
   id: string;
   platform: ContentPlatform;
   country: Country;
-  seed_keywords: string[]; // 种子关键词
+  mode: CrawlMode; // 自动 / 人工(如 TikTok 无开放 API)
+  targets: string[]; // 抓取目标:版块/标签/应用/查询词/节日(平台语义不同)
+  seed_keywords: string[]; // 内容方向约束词(保证相关性,避免泛抓)
   exclude_keywords: string[]; // 排除词
-  product_types: ProductType[]; // 关注的产品类型
-  frequency: 'realtime' | 'hourly' | 'daily' | 'weekly';
+  product_types: ProductType[]; // 关注产品
+  min_engagement?: number; // 热度门槛(如 Upvote/收藏 > N)
+  top_comments?: number; // 取前 N 条评论挖需求
+  trend_window?: TrendWindow; // 趋势时间窗
+  frequency: CrawlFrequency; // 抓取频率
+  note?: string; // 备注/人工说明
   enabled: boolean;
 }
 
