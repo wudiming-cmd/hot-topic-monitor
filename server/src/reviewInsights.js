@@ -19,6 +19,26 @@ export const DEMAND_TOPICS = [
   { label: '更多定制选项', terms: ['customize', 'customization', 'more options', 'customizable'], products: ['theme'] },
 ];
 
+// 好评点词库(用户喜欢什么):在正面评论里命中
+export const POSITIVE_ASPECTS = [
+  { label: '设计美观 / 好看', terms: ['beautiful', 'cute', 'gorgeous', 'pretty', 'aesthetic', 'love the design', 'so pretty'] },
+  { label: '内容丰富 / 选择多', terms: ['variety', 'selection', 'so many', 'tons of', 'lots of', 'options', 'plenty'] },
+  { label: '易用 / 上手简单', terms: ['easy', 'simple', 'user friendly', 'intuitive', 'easy to use'] },
+  { label: '小组件好用', terms: ['widget', 'widgets'] },
+  { label: '免费 / 划算', terms: ['free', 'worth it', 'worth the', 'affordable'] },
+  { label: '主题 / 壁纸质量好', terms: ['theme', 'themes', 'wallpaper', 'wallpapers'] },
+];
+
+// 差评点词库(用户抱怨什么):在负面评论里命中
+export const NEGATIVE_ASPECTS = [
+  { label: '闪退 / Bug / 不工作', terms: ['crash', 'bug', 'glitch', 'broken', "doesn't work", "won't work", 'not working', 'freezes', 'stopped working'] },
+  { label: '广告太多', terms: ['ads', 'too many ads', 'advertisement', 'popup', 'pop-up', 'ad every'] },
+  { label: '价格贵 / 订阅 / 套路', terms: ['expensive', 'overpriced', 'subscription', 'paywall', 'scam', 'refund', 'rip off', 'ripoff', 'money'] },
+  { label: '小组件失效', terms: ['widget', 'widgets'] },
+  { label: '内容少 / 重复', terms: ['not enough', 'limited', 'repetitive', 'few options', 'nothing good'] },
+  { label: '卡顿 / 慢', terms: ['slow', 'lag', 'laggy', 'buggy'] },
+];
+
 const hasTerm = (text, term) =>
   new RegExp(`(^|[^a-z0-9])${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`, 'i').test(text);
 const snippet = (s, n = 100) => String(s).replace(/\s+/g, ' ').trim().slice(0, n);
@@ -37,15 +57,15 @@ export function sentiment(reviews) {
   };
 }
 
-/** 聚合需求主题:仅统计需求型评论命中主题的次数。 */
-export function aggregateDemands(reviews, minCount = 2) {
+/** 通用聚合:在满足 predicate 的评论里,统计命中 lexicon 主题的次数 + 示例。 */
+function aggregateAspects(reviews, lexicon, predicate, minCount) {
   const agg = new Map();
   for (const r of reviews) {
+    if (!predicate(r)) continue;
     const text = `${r.title} ${r.content}`;
-    if (!REQUEST_RE.test(text)) continue;
-    for (const topic of DEMAND_TOPICS) {
+    for (const topic of lexicon) {
       if (!topic.terms.some((t) => hasTerm(text, t))) continue;
-      if (!agg.has(topic.label)) agg.set(topic.label, { label: topic.label, products: topic.products, count: 0, examples: [] });
+      if (!agg.has(topic.label)) agg.set(topic.label, { label: topic.label, products: topic.products ?? [], count: 0, examples: [] });
       const a = agg.get(topic.label);
       a.count++;
       if (a.examples.length < 3) a.examples.push(snippet(r.content || r.title));
@@ -53,3 +73,15 @@ export function aggregateDemands(reviews, minCount = 2) {
   }
   return [...agg.values()].filter((a) => a.count >= minCount).sort((a, b) => b.count - a.count);
 }
+
+/** 需求:需求型评论命中需求主题。 */
+export const aggregateDemands = (reviews, minCount = 2) =>
+  aggregateAspects(reviews, DEMAND_TOPICS, (r) => REQUEST_RE.test(`${r.title} ${r.content}`), minCount);
+
+/** 好评点:正面评论(>=4★)命中的好评维度。 */
+export const aggregatePraises = (reviews, minCount = 2) =>
+  aggregateAspects(reviews, POSITIVE_ASPECTS, (r) => (r.rating || 0) >= 4, minCount);
+
+/** 差评点:负面评论(<=2★)命中的差评维度。 */
+export const aggregateComplaints = (reviews, minCount = 2) =>
+  aggregateAspects(reviews, NEGATIVE_ASPECTS, (r) => (r.rating || 0) <= 2, minCount);

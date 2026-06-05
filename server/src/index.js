@@ -10,7 +10,7 @@ import { fetchGooglePlayReviews } from './adapters/googleplay.js';
 import { fetchXTrends } from './adapters/x.js';
 import { fetchTikTokTrendsHeadless, fetchPinterestTodayHeadless } from './adapters/headless.js';
 import { COMPETITOR_APPS } from './competitors.js';
-import { aggregateDemands, sentiment } from './reviewInsights.js';
+import { aggregateComplaints, aggregateDemands, aggregatePraises, sentiment } from './reviewInsights.js';
 import { classify } from './classify.js';
 import { clamp01 } from './scoring.js';
 import { CLASSIFY_RULES, REDDIT_CONTENT_SUBS, REDDIT_MIN_UPVOTES } from './rules.js';
@@ -190,18 +190,20 @@ app.get('/review-insights', async (req, res) => {
         reviewCount: reviews.length,
         ...sentiment(reviews),
         demands: aggregateDemands(reviews),
+        praises: aggregatePraises(reviews),
+        complaints: aggregateComplaints(reviews),
       };
     } catch (e) {
-      return { ...app, ok: false, error: String(e.message || e), reviewCount: 0, demands: [] };
+      return { ...app, ok: false, error: String(e.message || e), reviewCount: 0, demands: [], praises: [], complaints: [] };
     }
   }));
 
-  // 跨 App 聚合的总需求(按平台拆分)
-  const mergeDemands = (list) => {
+  // 跨 App 聚合某维度(按平台拆分)
+  const merge = (list, dim) => {
     const m = new Map();
     for (const app of list) {
-      for (const d of app.demands ?? []) {
-        if (!m.has(d.label)) m.set(d.label, { label: d.label, products: d.products, count: 0, apps: new Set(), examples: [] });
+      for (const d of app[dim] ?? []) {
+        if (!m.has(d.label)) m.set(d.label, { label: d.label, products: d.products ?? [], count: 0, apps: new Set(), examples: [] });
         const a = m.get(d.label);
         a.count += d.count; a.apps.add(app.name);
         for (const ex of d.examples) if (a.examples.length < 3) a.examples.push(ex);
@@ -209,13 +211,14 @@ app.get('/review-insights', async (req, res) => {
     }
     return [...m.values()].map((a) => ({ ...a, apps: [...a.apps] })).sort((a, b) => b.count - a.count);
   };
+  const byOS = (os) => apps.filter((a) => a.os === os);
 
   res.json({
     fetched_at,
     apps,
     aggregated: {
-      iOS: mergeDemands(apps.filter((a) => a.os === 'iOS')),
-      Android: mergeDemands(apps.filter((a) => a.os === 'Android')),
+      iOS: { demands: merge(byOS('iOS'), 'demands'), praises: merge(byOS('iOS'), 'praises'), complaints: merge(byOS('iOS'), 'complaints') },
+      Android: { demands: merge(byOS('Android'), 'demands'), praises: merge(byOS('Android'), 'praises'), complaints: merge(byOS('Android'), 'complaints') },
     },
   });
 });
