@@ -11,6 +11,8 @@ import { fetchXTrends } from './adapters/x.js';
 import { fetchTikTokTrendsHeadless, fetchPinterestTodayHeadless } from './adapters/headless.js';
 import { COMPETITOR_APPS } from './competitors.js';
 import { aggregateComplaints, aggregateDemands, aggregatePraises, sentiment } from './reviewInsights.js';
+import { deepseekChat } from './adapters/deepseek.js';
+import { buildMessages } from './analyze.js';
 import { classify } from './classify.js';
 import { clamp01 } from './scoring.js';
 import { CLASSIFY_RULES, REDDIT_CONTENT_SUBS, REDDIT_MIN_UPVOTES } from './rules.js';
@@ -221,6 +223,26 @@ app.get('/review-insights', async (req, res) => {
       Android: { demands: merge(byOS('Android'), 'demands'), praises: merge(byOS('Android'), 'praises'), complaints: merge(byOS('Android'), 'complaints') },
     },
   });
+});
+
+// ===== /analyze:DeepSeek AI 分析(热点 / 内容机会 / 竞品评论)=====
+app.get('/analyze/status', (_req, res) => {
+  res.json({ enabled: config.deepseek.enabled, model: config.deepseek.model });
+});
+
+app.post('/analyze', async (req, res) => {
+  const { kind = 'trends', payload = {}, question = '' } = req.body || {};
+  if (!config.deepseek.enabled) {
+    return res.status(503).json({ error: '后端未配置 DeepSeek Key(在 server/.env 设置 DEEPSEEK_API_KEY)' });
+  }
+  try {
+    const messages = buildMessages(kind, payload, question);
+    const out = await deepseekChat(messages);
+    res.json({ analysis: out.content, model: out.model, usage: out.usage, kind });
+  } catch (e) {
+    log('analyze failed:', e.message);
+    res.status(502).json({ error: String(e.message || e) });
+  }
 });
 
 // ===== /monthly:基于历史快照真实聚合(无数据时给出引导) =====

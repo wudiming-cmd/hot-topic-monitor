@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Apple, Smartphone, Star, MessageSquareQuote, AlertCircle, TrendingUp, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useReviewInsights } from '../../hooks/useReviewInsights';
+import { AiAnalysisButton } from '../AiAnalysisButton';
 import { PRODUCT_LABEL } from '../../services/content/rules';
 import type { AppInsight, DemandTheme, Dimension, OS } from '../../services/content/reviews';
 
@@ -39,6 +40,16 @@ export function ReviewInsights() {
         <p className="text-sm text-muted-foreground">
           从竞品 App 评论里提炼"用户想要什么"(需求维度),区分 iOS / Android · {data.source === 'mock' ? '模拟数据' : '实时'}
         </p>
+        <div className="flex items-center gap-2 flex-wrap">
+        <AiAnalysisButton
+          kind="reviews"
+          title="AI 竞品评论分析"
+          label="AI 分析竞品"
+          buildPayload={() => ({
+            aggregated: data.aggregated,
+            apps: data.apps.map((a) => ({ name: a.name, os: a.os, avgRating: a.avgRating, positive: a.positive, negative: a.negative })),
+          })}
+        />
         {/* 平台筛选 */}
         <div className="flex gap-1 bg-muted/30 p-1 rounded-lg">
           {(['all', 'iOS', 'Android'] as const).map((v) => (
@@ -51,6 +62,7 @@ export function ReviewInsights() {
               {v === 'all' ? '全部' : v}
             </button>
           ))}
+        </div>
         </div>
       </div>
 

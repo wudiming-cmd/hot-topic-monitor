@@ -11,6 +11,7 @@ import { Toolbar } from './components/Toolbar';
 import { TrendDetail } from './components/TrendDetail';
 import { FavoritesPanel } from './components/FavoritesPanel';
 import { SourceStatusBar } from './components/SourceStatusBar';
+import { AiAnalysisButton } from './components/AiAnalysisButton';
 import { useTrends } from './hooks/useTrends';
 
 // 懒加载较重的视图(月度含 recharts、广告情报),减小首屏体积
@@ -212,8 +213,8 @@ export default function App() {
               autoRefresh={autoRefresh} onAutoRefreshChange={setAutoRefresh}
             />
 
-            {/* Category Filter */}
-            <div className="mb-6">
+            {/* Category Filter + AI 分析 */}
+            <div className="mb-6 flex items-start justify-between gap-3 flex-wrap">
               <div className="flex gap-2 flex-wrap">
                 {(['all', 'news', 'tech', 'entertainment', 'social', 'meme'] as const).map((category) => (
                   <button
@@ -233,6 +234,17 @@ export default function App() {
                   </button>
                 ))}
               </div>
+              <AiAnalysisButton
+                kind="trends"
+                title="AI 热点分析"
+                label="AI 分析热点"
+                buildPayload={() => ({
+                  items: displayedItems.slice(0, 25).map((t) => ({
+                    title: t.title, source: t.source, category: t.category,
+                    composite_score: t.composite_score, status: t.status,
+                  })),
+                })}
+              />
             </div>
 
             <div className="bg-card border border-border rounded-xl overflow-hidden">

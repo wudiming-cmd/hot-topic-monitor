@@ -15,4 +15,10 @@ export const config = {
     engagement: Number(process.env.WEIGHT_ENGAGEMENT ?? 0.2),
   },
   metaAdLibToken: process.env.META_ADLIB_TOKEN ?? '',
+  deepseek: {
+    apiKey: process.env.DEEPSEEK_API_KEY ?? '',
+    model: process.env.DEEPSEEK_MODEL ?? 'deepseek-chat',
+    baseUrl: process.env.DEEPSEEK_BASE_URL ?? 'https://api.deepseek.com',
+    enabled: Boolean(process.env.DEEPSEEK_API_KEY),
+  },
 };

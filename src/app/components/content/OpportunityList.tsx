@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, Star, EyeOff, HelpCircle, ExternalLink, Inbox, Flame, MessageSquareQuote } from 'lucide-react';
 import { useOpportunities } from '../../hooks/useOpportunities';
 import { OpportunityDetail } from './OpportunityDetail';
+import { AiAnalysisButton } from '../AiAnalysisButton';
 import {
   CATEGORY_CHIP, CATEGORY_LABEL, COUNTRY_LABEL, PLATFORM_LABEL, PRODUCT_LABEL, STATUS_LABEL,
 } from '../../services/content/rules';
@@ -63,7 +64,8 @@ export function OpportunityList({ classifyRules }: { classifyRules: ClassifyRule
           ]} />
       </div>
 
-      {/* 内容分类快捷筛选 */}
+      {/* 内容分类快捷筛选 + AI 分析 */}
+      <div className="flex items-start justify-between gap-3 flex-wrap">
       <div className="flex gap-2 flex-wrap">
         {CATEGORIES.map((c) => (
           <button
@@ -78,6 +80,18 @@ export function OpportunityList({ classifyRules }: { classifyRules: ClassifyRule
             {c === 'all' ? '全部分类' : CATEGORY_LABEL[c as ContentCategory]}
           </button>
         ))}
+      </div>
+        <AiAnalysisButton
+          kind="opportunities"
+          title="AI 内容机会分析"
+          label="AI 分析机会"
+          buildPayload={() => ({
+            items: items.slice(0, 30).map((o) => ({
+              name: o.name, platform: o.platform, category: o.category,
+              recommended_products: o.recommended_products, heat_signal: o.heat_signal, tags: o.tags,
+            })),
+          })}
+        />
       </div>
 
       {error && <div className="px-4 py-3 bg-destructive/10 border border-destructive/30 rounded-lg text-sm text-destructive">加载失败：{error}</div>}
