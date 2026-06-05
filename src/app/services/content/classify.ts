@@ -14,10 +14,23 @@ const CATEGORY_PRIORITY: Exclude<ContentCategory, 'pending'>[] = [
   'seasonal', 'entertainment', 'meme', 'identity', 'interest', 'aesthetic',
 ];
 
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** 词边界匹配:term 作为独立词/短语出现才算命中(避免 "cat" 命中 "category")。 */
+function hasTerm(haystack: string, term: string): boolean {
+  if (!term) return false;
+  const re = new RegExp(`(^|[^a-z0-9])${escapeRe(term.toLowerCase())}([^a-z0-9]|$)`, 'i');
+  return re.test(haystack);
+}
+
 function normalize(text: string, synonyms: Record<string, string>): string {
   let s = ` ${text.toLowerCase()} `;
   for (const [alias, std] of Object.entries(synonyms)) {
-    s = s.split(alias.toLowerCase()).join(std.toLowerCase());
+    // 词边界替换,避免 alias 命中单词内部(如 ts → widgets)
+    const re = new RegExp(`(^|[^a-z0-9])${escapeRe(alias.toLowerCase())}([^a-z0-9]|$)`, 'gi');
+    s = s.replace(re, (_m, a, b) => `${a}${std.toLowerCase()}${b}`);
   }
   return s;
 }
@@ -38,7 +51,7 @@ export function classify(
   const haystack = normalize([name, keywords.join(' '), description].join(' '), rules.synonyms);
 
   // 1) 全局排除词
-  const excluded = rules.globalExcludes.some((w) => w && haystack.includes(w.toLowerCase()));
+  const excluded = rules.globalExcludes.some((w) => hasTerm(haystack, w));
   if (excluded) {
     return { category: 'pending', tags: [], recommended_products: [], excluded: true };
   }
@@ -48,7 +61,7 @@ export function classify(
   let bestHits = 0;
   for (const cat of CATEGORY_PRIORITY) {
     const kws = rules.categoryKeywords[cat] ?? [];
-    const hits = kws.filter((kw) => kw && haystack.includes(kw.toLowerCase())).length;
+    const hits = kws.filter((kw) => hasTerm(haystack, kw)).length;
     if (hits > bestHits) {
       bestHits = hits;
       best = cat;
@@ -59,9 +72,9 @@ export function classify(
 
   // 3) 标签:命中的分类关键词 + 词库命中
   const matchedKw = best
-    ? (rules.categoryKeywords[best] ?? []).filter((kw) => haystack.includes(kw.toLowerCase()))
+    ? (rules.categoryKeywords[best] ?? []).filter((kw) => hasTerm(haystack, kw))
     : [];
-  const lexHits = rules.tagLexicon.filter((t) => t && haystack.includes(t.toLowerCase()));
+  const lexHits = rules.tagLexicon.filter((t) => hasTerm(haystack, t));
   const tags = Array.from(new Set([...matchedKw, ...lexHits])).slice(0, 6);
 
   // 4) 产品推荐

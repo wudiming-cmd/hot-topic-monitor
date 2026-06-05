@@ -18,7 +18,7 @@ export const CLASSIFY_RULES = {
     entertainment: ['theme', 'sticker'],
     meme: ['sticker'],
   },
-  globalExcludes: ['election', 'politics', 'president', 'war', 'shooting', 'crime', 'court', 'stock', 'inflation', 'economy', 'bank', 'tariff', 'lawsuit', 'protest', 'nsfw'],
+  globalExcludes: ['election', 'politics', 'president', 'war', 'shooting', 'crime', 'court', 'stock', 'inflation', 'economy', 'bank', 'tariff', 'lawsuit', 'protest', 'nsfw', 'crypto', 'bitcoin', 'ethereum', 'nfl', 'nba', 'mlb', 'golf', 'tennis', 'soccer', 'playoff', 'score', 'weather', 'earthquake'],
 };
 
 // 内容方向抓取目标(对应前端重新规划的抓取规则)
