@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
   TrendingUp, Flame, Zap, TrendingDown, Activity, BarChart3, Radar,
-  AlertCircle, Megaphone, Sun, Moon, Star,
+  AlertCircle, Megaphone, Sun, Moon, Star, Compass,
 } from 'lucide-react';
 import { MetricCard } from './components/MetricCard';
 import { TrendList } from './components/TrendList';
@@ -20,12 +20,15 @@ const MonthlyDashboard = lazy(() =>
 const AdIntelligence = lazy(() =>
   import('./components/AdIntelligence').then((m) => ({ default: m.AdIntelligence })),
 );
+const OpportunityRadar = lazy(() =>
+  import('./components/content/OpportunityRadar').then((m) => ({ default: m.OpportunityRadar })),
+);
 import { useTheme } from './hooks/useTheme';
 import { useFavorites } from './hooks/useFavorites';
 import { exportTrendsCSV, exportTrendsJSON } from './services/export';
 import type { Category, Platform, SortKey, TrendItem, TrendStatus } from './services/types';
 
-type ViewMode = 'realtime' | 'monthly' | 'ads';
+type ViewMode = 'realtime' | 'monthly' | 'ads' | 'content';
 
 export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('realtime');
@@ -92,6 +95,7 @@ export default function App() {
   };
 
   const navItems: { id: ViewMode; label: string; icon: typeof Radar }[] = [
+    { id: 'content', label: '内容机会', icon: Compass },
     { id: 'realtime', label: '实时监控', icon: Radar },
     { id: 'monthly', label: '月度汇总', icon: BarChart3 },
     { id: 'ads', label: '广告情报', icon: Megaphone },
@@ -264,9 +268,11 @@ export default function App() {
           </>
         )}
 
-        {(viewMode === 'monthly' || viewMode === 'ads') && (
+        {(viewMode === 'monthly' || viewMode === 'ads' || viewMode === 'content') && (
           <Suspense fallback={<ViewLoading />}>
-            {viewMode === 'monthly' ? <MonthlyDashboard /> : <AdIntelligence />}
+            {viewMode === 'monthly' && <MonthlyDashboard />}
+            {viewMode === 'ads' && <AdIntelligence />}
+            {viewMode === 'content' && <OpportunityRadar />}
           </Suspense>
         )}
       </div>
