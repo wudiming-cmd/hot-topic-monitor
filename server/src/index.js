@@ -4,6 +4,7 @@ import { config } from './config.js';
 import { fetchHackerNews } from './adapters/hackernews.js';
 import { fetchRedditHot, toTrendItems } from './adapters/reddit.js';
 import { fetchGoogleNews } from './adapters/googlenews.js';
+import { fetchGiphyTrending } from './adapters/giphy.js';
 import { fetchGoogleTrends } from './adapters/googletrends.js';
 import { fetchAppStoreReviews } from './adapters/appstore.js';
 import { fetchGooglePlayReviews } from './adapters/googleplay.js';
@@ -59,6 +60,18 @@ async function collectTrends() {
   } catch (e) {
     statuses.push({ source: 'reddit', ok: false, count: 0, error: String(e.message || e) });
     log('Reddit failed:', e.message);
+  }
+
+  // Giphy trending 梗图(仅配置了 GIPHY_API_KEY 时;否则跳过,梗图栏为空)
+  if (config.giphy.enabled) {
+    try {
+      const gifs = await fetchGiphyTrending(20);
+      raw.push(...gifs);
+      statuses.push({ source: 'giphy', ok: true, count: gifs.length });
+    } catch (e) {
+      statuses.push({ source: 'giphy', ok: false, count: 0, error: String(e.message || e) });
+      log('Giphy failed:', e.message);
+    }
   }
 
   // 历史快照对比 → 真实 velocity 与 新/升/稳/降 状态

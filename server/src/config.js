@@ -15,6 +15,10 @@ export const config = {
     engagement: Number(process.env.WEIGHT_ENGAGEMENT ?? 0.2),
   },
   metaAdLibToken: process.env.META_ADLIB_TOKEN ?? '',
+  giphy: {
+    apiKey: process.env.GIPHY_API_KEY ?? '',
+    enabled: Boolean(process.env.GIPHY_API_KEY),
+  },
   deepseek: {
     apiKey: process.env.DEEPSEEK_API_KEY ?? '',
     model: process.env.DEEPSEEK_MODEL ?? 'deepseek-chat',

@@ -10,6 +10,9 @@ export async function deepseekChat(messages, { temperature = 0.4, maxTokens = 12
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${config.deepseek.apiKey}`,
+      // OpenRouter 建议带的来源标识(非必需)
+      'HTTP-Referer': 'http://localhost:5173',
+      'X-Title': 'Hot Topic Monitor',
     },
     body: JSON.stringify({
       model: config.deepseek.model,
