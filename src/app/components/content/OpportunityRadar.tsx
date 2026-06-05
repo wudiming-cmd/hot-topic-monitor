@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { List, Settings2, Tags, Radar } from 'lucide-react';
+import { List, Settings2, Tags, Radar, MessageSquareQuote } from 'lucide-react';
 import { useContentRules } from '../../hooks/useContentRules';
 import { OpportunityList } from './OpportunityList';
 import { CrawlRulesConfig } from './CrawlRulesConfig';
 import { ClassifyRulesConfig } from './ClassifyRulesConfig';
+import { ReviewInsights } from './ReviewInsights';
 
-type Tab = 'list' | 'crawl' | 'classify';
+type Tab = 'list' | 'reviews' | 'crawl' | 'classify';
 
 export function OpportunityRadar() {
   const [tab, setTab] = useState<Tab>('list');
@@ -13,6 +14,7 @@ export function OpportunityRadar() {
 
   const tabs: { id: Tab; label: string; icon: typeof List }[] = [
     { id: 'list', label: '机会列表', icon: List },
+    { id: 'reviews', label: '竞品评论', icon: MessageSquareQuote },
     { id: 'crawl', label: '抓取规则', icon: Settings2 },
     { id: 'classify', label: '分类规则', icon: Tags },
   ];
@@ -42,6 +44,7 @@ export function OpportunityRadar() {
       </div>
 
       {tab === 'list' && <OpportunityList classifyRules={classifyRules} />}
+      {tab === 'reviews' && <ReviewInsights />}
       {tab === 'crawl' && <CrawlRulesConfig rules={crawlRules} onChange={setCrawlRules} />}
       {tab === 'classify' && <ClassifyRulesConfig rules={classifyRules} onChange={setClassifyRules} />}
     </div>
