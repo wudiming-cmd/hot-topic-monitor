@@ -45,8 +45,21 @@ VITE_API_BASE_URL=http://localhost:8787
 | /monthly | — | — | 占位,需历史存储 |
 | /ads | Meta Ad Library | 需 token | 未配置返回空 |
 
+## 历史快照与真实 velocity / 月度(已实现)
+
+- 用内置 `node:sqlite` 把每次采集写入 `data/snapshots.db`(`observations` 表)。
+- `/trends` 每次采集与上一次对比:
+  - **velocity**(上升速度)= 单位时间热度增量(归一化);首次出现保留估算值。
+  - **状态** = 新冒出 / 快速上升 / 持续在榜 / 已回落(基于热度变化)。
+- `/monthly` 从 `daily_rollup` 真实聚合(每日总数/上升/新增、平台分布、分类、Top)。
+- 开启定时采集:`.env` 设 `COLLECT_INTERVAL_MIN=60`(每小时),历史自动积累,velocity/月度随天数变完整。
+  - 或让前端"自动刷新"指向本后端,请求即采集。
+
+> 说明:相邻两次采集间隔太短(秒级)时热度几乎不变 → 状态多为"持续",velocity≈0,属正常;
+> 拉开真实时间间隔(定时采集)后才会体现真实涨落。
+
 ## 下一步可扩展
 
-- Google Trends(pytrends 思路)、App Store/Play 评论(公开 RSS / scraper)、X(trends24)、TikTok(Creative Center 无头渲染)适配器。
-- 历史快照存储(SQLite/Postgres)→ 真实 velocity / 变化追踪 / 月度聚合。
+- Pinterest / X(trends24)/ TikTok(Creative Center 无头渲染)适配器。
+- 把 `observations` 升级为带去重键的话题级追踪;Postgres 持久化。
 - 分类规则改为读数据库,与前端配置页打通。

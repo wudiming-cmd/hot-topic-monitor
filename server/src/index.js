@@ -9,6 +9,7 @@ import { fetchAppStoreReviewSignals } from './adapters/appstore.js';
 import { classify } from './classify.js';
 import { clamp01 } from './scoring.js';
 import { CLASSIFY_RULES, REDDIT_CONTENT_SUBS, REDDIT_MIN_UPVOTES } from './rules.js';
+import { deriveChange, getMonthly, recordObservations, rollupToday } from './db.js';
 
 const app = express();
 app.use(cors({ origin: config.corsOrigin === '*' ? true : config.corsOrigin.split(',') }));
@@ -21,13 +22,12 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true, reddit: config.reddit.hasCreds ? 'oauth' : 'public-json', time: now() });
 });
 
-// ===== /trends:Hacker News(tech) + Reddit(social),单源故障隔离 =====
-app.get('/trends', async (_req, res) => {
+// 采集 trends(HN + Google News + Reddit)+ 历史对比 + 入库。供路由与定时器复用。
+async function collectTrends() {
   const fetched_at = now();
   const raw = [];
   const statuses = [];
 
-  // Hacker News
   try {
     const hn = await fetchHackerNews(20);
     raw.push(...hn);
@@ -36,8 +36,6 @@ app.get('/trends', async (_req, res) => {
     statuses.push({ source: 'hackernews', ok: false, count: 0, error: String(e.message || e) });
     log('HN failed:', e.message);
   }
-
-  // Google News(免 Key)
   try {
     const news = await fetchGoogleNews(20);
     raw.push(...news);
@@ -46,8 +44,6 @@ app.get('/trends', async (_req, res) => {
     statuses.push({ source: 'google_news', ok: false, count: 0, error: String(e.message || e) });
     log('GoogleNews failed:', e.message);
   }
-
-  // Reddit
   try {
     const posts = await fetchRedditHot(['technology', 'todayilearned'], 15);
     const items = toTrendItems(posts, fetched_at);
@@ -58,7 +54,31 @@ app.get('/trends', async (_req, res) => {
     log('Reddit failed:', e.message);
   }
 
-  res.json({ raw, statuses, fetched_at, source: 'live' });
+  // 历史快照对比 → 真实 velocity 与 新/升/稳/降 状态
+  const ts = Date.parse(fetched_at) || Date.now();
+  const keyed = raw.map((r) => ({
+    key: r.url || r.title, heat: r.popularity,
+    source: r.source, title: r.title, platform: r.source, category: r.category,
+  }));
+  const change = deriveChange('trend', keyed, ts);
+  for (const r of raw) {
+    const ch = change.get(r.url || r.title);
+    if (ch?.hasHistory) { r.velocity = ch.velocity; r.status = ch.status; }
+    else { r.status = 'new'; }
+  }
+  recordObservations('trend', keyed, ts);
+  rollupToday(raw, ts);
+
+  return { raw, statuses, fetched_at, source: 'live' };
+}
+
+// ===== /trends:HN + Google News + Reddit,单源故障隔离,历史驱动 velocity/状态 =====
+app.get('/trends', async (_req, res) => {
+  try {
+    res.json(await collectTrends());
+  } catch (e) {
+    res.status(500).json({ raw: [], statuses: [], fetched_at: now(), error: String(e.message || e) });
+  }
 });
 
 // ===== /opportunities:多源(Reddit + Google Trends + App Store)→ 自动分类 =====
@@ -132,23 +152,15 @@ app.get('/opportunities', async (_req, res) => {
   res.json({ items, excludedCount, irrelevantCount, statuses, fetched_at, source: 'live' });
 });
 
-// ===== /monthly:占位(真实月度需历史快照存储) =====
+// ===== /monthly:基于历史快照真实聚合(无数据时给出引导) =====
 app.get('/monthly', (req, res) => {
-  const month = String(req.query.month ?? '2026-06');
+  const month = String(req.query.month ?? new Date().toISOString().slice(0, 7));
+  const data = getMonthly(month);
+  if (data) return res.json(data);
   res.json({
     month,
-    note: '占位数据。真实月度汇总需后端持久化每日采集快照后聚合。',
-    dailyTrends: Array.from({ length: 30 }, (_, i) => ({ date: `${month.split('-')[1]}/${i + 1}`, total: 90, rising: 32, new: 18 })),
-    platformDistribution: [
-      { name: 'Reddit', value: 45, color: '#f97316' },
-      { name: 'Hacker News', value: 30, color: '#f59e0b' },
-      { name: 'Google Trends', value: 15, color: '#3b82f6' },
-      { name: 'Pinterest', value: 10, color: '#ef4444' },
-    ],
-    categoryPerformance: [
-      { category: '审美', count: 0, avgScore: 0 },
-    ],
-    topTopics: [],
+    note: '暂无该月历史快照。多次访问 /trends(或开启定时采集)以积累每日数据后,此处将显示真实聚合。',
+    dailyTrends: [], platformDistribution: [], categoryPerformance: [], topTopics: [],
     summary: {
       totalTrends: 0, avgDailyActive: 0, topTopic: '-', topTopicScore: '-',
       newMemes: 0, totalTrendsChange: '+0%', avgDailyActiveChange: '+0%', newMemesChange: '+0%',
@@ -165,6 +177,17 @@ app.get('/ads', async (_req, res) => {
   // TODO: 调 https://graph.facebook.com/.../ads_archive
   res.json({ ads: [], fetched_at, note: '已配置 token,Ad Library 调用待实现。' });
 });
+
+// 可选定时采集:设 COLLECT_INTERVAL_MIN 后周期性采集并入库,自动积累历史(velocity/月度变真实)。
+const collectMin = Number(process.env.COLLECT_INTERVAL_MIN ?? 0);
+if (collectMin > 0) {
+  log(`定时采集已开启:每 ${collectMin} 分钟`);
+  setInterval(() => {
+    collectTrends()
+      .then((r) => log(`定时采集完成:${r.raw.length} 条`))
+      .catch((e) => log('定时采集失败:', e.message));
+  }, collectMin * 60000);
+}
 
 app.listen(config.port, () => {
   log(`后端已启动 → http://localhost:${config.port}`);
