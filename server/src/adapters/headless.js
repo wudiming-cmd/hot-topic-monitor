@@ -31,9 +31,9 @@ async function withPage(fn) {
 export async function fetchTikTokTrendsHeadless(limit = 20) {
   return withPage(async (page) => {
     await page.goto('https://ads.tiktok.com/business/creativecenter/inspiration/popular/hashtag/pc/en?region=US', {
-      waitUntil: 'networkidle', timeout: 45000,
+      waitUntil: 'domcontentloaded', timeout: 60000,
     });
-    await page.waitForTimeout(3500);
+    await page.waitForTimeout(5000);
     const terms = await page.evaluate(() => {
       const set = new Set();
       document.querySelectorAll('span, a, h3').forEach((el) => {
@@ -51,8 +51,8 @@ export async function fetchTikTokTrendsHeadless(limit = 20) {
 /** Pinterest Today / trends — 飙升视觉关键词(美区)。 */
 export async function fetchPinterestTodayHeadless(limit = 20) {
   return withPage(async (page) => {
-    await page.goto('https://www.pinterest.com/today/', { waitUntil: 'networkidle', timeout: 45000 });
-    await page.waitForTimeout(3500);
+    await page.goto('https://www.pinterest.com/today/', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.waitForTimeout(5000);
     const terms = await page.evaluate(() => {
       const out = [];
       document.querySelectorAll('[data-test-id] h1, [data-test-id] h2, h3, a[href*="/search/"]').forEach((el) => {

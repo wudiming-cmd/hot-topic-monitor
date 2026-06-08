@@ -19,6 +19,8 @@ export const config = {
     apiKey: process.env.GIPHY_API_KEY ?? '',
     enabled: Boolean(process.env.GIPHY_API_KEY),
   },
+  // 无头浏览器源(TikTok/Pinterest):重且慢,默认关,需显式开启
+  enableHeadless: process.env.ENABLE_HEADLESS === 'true',
   deepseek: {
     apiKey: process.env.DEEPSEEK_API_KEY ?? '',
     model: process.env.DEEPSEEK_MODEL ?? 'deepseek-chat',

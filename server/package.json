@@ -13,5 +13,8 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "google-play-scraper": "^10.0.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.60.0"
   }
 }

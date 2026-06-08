@@ -147,11 +147,11 @@ app.get('/opportunities', async (_req, res) => {
     statuses.push({ source: 'x', ok: true, count: xs.length });
   } catch (e) { statuses.push({ source: 'x', ok: false, count: 0, error: String(e.message || e) }); log('X failed:', e.message); }
 
-  // TikTok / Pinterest(需 Playwright,未安装则优雅跳过)
-  for (const [src, fn, plat] of [
+  // TikTok / Pinterest(无头浏览器,重&慢):仅在 ENABLE_HEADLESS=true 时启用
+  for (const [src, fn, plat] of (config.enableHeadless ? [
     ['tiktok', fetchTikTokTrendsHeadless, 'tiktok'],
     ['pinterest', fetchPinterestTodayHeadless, 'pinterest'],
-  ]) {
+  ] : [])) {
     try {
       const list = await fn(20);
       list.forEach((t, i) => candidates.push({
