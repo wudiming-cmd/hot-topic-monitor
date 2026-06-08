@@ -1,0 +1,40 @@
+# Render 蓝图:一键部署后端(server/)。
+# 用法:Render → New + → Blueprint → 选这个仓库 → 按提示填密钥(sync:false 的几项)。
+services:
+  - type: web
+    name: hot-topic-monitor-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: ENABLE_HEADLESS
+        value: "false"
+      - key: YOUTUBE_REGION
+        value: "US"
+      - key: DEEPSEEK_MODEL
+        value: "deepseek-chat"
+      - key: DEEPSEEK_BASE_URL
+        value: "https://api.deepseek.com"
+      # —— 以下密钥在 Render 控制台填写(不写进文件,安全)——
+      - key: GIPHY_API_KEY
+        sync: false
+      - key: TMDB_API_KEY
+        sync: false
+      - key: YOUTUBE_API_KEY
+        sync: false
+      - key: REDDIT_CLIENT_ID
+        sync: false
+      - key: REDDIT_CLIENT_SECRET
+        sync: false
+      - key: META_ADLIB_TOKEN
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false

@@ -5,8 +5,11 @@
   "type": "module",
   "description": "多平台热点监测 / 内容机会雷达 后端(MVP)",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "start": "node --experimental-sqlite src/index.js",
+    "dev": "node --watch --experimental-sqlite src/index.js"
+  },
+  "engines": {
+    "node": ">=22"
   },
   "dependencies": {
     "cors": "^2.8.5",
