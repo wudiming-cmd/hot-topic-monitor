@@ -5,6 +5,8 @@ import { fetchHackerNews } from './adapters/hackernews.js';
 import { fetchRedditHot, toTrendItems } from './adapters/reddit.js';
 import { fetchGoogleNews } from './adapters/googlenews.js';
 import { fetchGiphyTrending } from './adapters/giphy.js';
+import { fetchTmdbTrending } from './adapters/tmdb.js';
+import { fetchYouTubeTrending } from './adapters/youtube.js';
 import { fetchGoogleTrends } from './adapters/googletrends.js';
 import { fetchAppStoreReviews } from './adapters/appstore.js';
 import { fetchGooglePlayReviews } from './adapters/googleplay.js';
@@ -71,6 +73,30 @@ async function collectTrends() {
     } catch (e) {
       statuses.push({ source: 'giphy', ok: false, count: 0, error: String(e.message || e) });
       log('Giphy failed:', e.message);
+    }
+  }
+
+  // TMDb 娱乐(影视,仅配置 TMDB_API_KEY 时)
+  if (config.tmdb.enabled) {
+    try {
+      const items = await fetchTmdbTrending(20);
+      raw.push(...items);
+      statuses.push({ source: 'tmdb', ok: true, count: items.length });
+    } catch (e) {
+      statuses.push({ source: 'tmdb', ok: false, count: 0, error: String(e.message || e) });
+      log('TMDb failed:', e.message);
+    }
+  }
+
+  // YouTube 热门视频(仅配置 YOUTUBE_API_KEY 时)
+  if (config.youtube.enabled) {
+    try {
+      const items = await fetchYouTubeTrending(20);
+      raw.push(...items);
+      statuses.push({ source: 'youtube', ok: true, count: items.length });
+    } catch (e) {
+      statuses.push({ source: 'youtube', ok: false, count: 0, error: String(e.message || e) });
+      log('YouTube failed:', e.message);
     }
   }
 

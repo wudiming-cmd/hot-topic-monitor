@@ -19,6 +19,15 @@ export const config = {
     apiKey: process.env.GIPHY_API_KEY ?? '',
     enabled: Boolean(process.env.GIPHY_API_KEY),
   },
+  tmdb: {
+    apiKey: process.env.TMDB_API_KEY ?? '',
+    enabled: Boolean(process.env.TMDB_API_KEY),
+  },
+  youtube: {
+    apiKey: process.env.YOUTUBE_API_KEY ?? '',
+    region: process.env.YOUTUBE_REGION ?? 'US',
+    enabled: Boolean(process.env.YOUTUBE_API_KEY),
+  },
   // 无头浏览器源(TikTok/Pinterest):重且慢,默认关,需显式开启
   enableHeadless: process.env.ENABLE_HEADLESS === 'true',
   deepseek: {
